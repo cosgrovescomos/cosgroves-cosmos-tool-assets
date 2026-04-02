@@ -12,8 +12,14 @@
       --radius:14px; --radius-lg:20px;
       --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     }
-    #ac-tool,#ac-tool *{box-sizing:border-box}
-#ac-tool{max-width:1400px;margin:0 auto;padding:14px;background:radial-gradient(circle at top,rgba(110,193,255,.08),transparent 28%),linear-gradient(180deg,var(--bg0),var(--bg1) 42%,var(--bg2));color:var(--text);font-family:var(--font);color-scheme:dark;isolation:isolate}
+    html,body{margin:0;padding:0;min-height:100%}
+    #astro-system-tool-root{display:block;width:100%;position:relative;isolation:isolate}
+    #astro-system-tool-root .astro-tool-app,
+    #ac-tool{max-width:1400px;margin:0 auto;padding:14px;position:relative;isolation:isolate;background:radial-gradient(circle at top,rgba(110,193,255,.08),transparent 28%),linear-gradient(180deg,var(--bg0),var(--bg1) 42%,var(--bg2));color:var(--text);font-family:var(--font);color-scheme:dark;line-height:1.35;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+    #astro-system-tool-root,
+    #astro-system-tool-root .astro-tool-app,
+    #ac-tool,
+    #ac-tool *{box-sizing:border-box}
     /* Neutralise Squarespace link/heading/paragraph bleed-through */
     #ac-tool a{color:inherit;text-decoration:none}
     #ac-tool a:hover{color:inherit;text-decoration:none}
@@ -54,8 +60,9 @@
     #ac-tool button:active{transform:translateY(0);box-shadow:0 4px 10px rgba(0,0,0,.20),inset 0 2px 4px rgba(0,0,0,.18)}
     #ac-tool button:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(110,193,255,.20),0 8px 18px rgba(0,0,0,.22)}
     #ac-tool .actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
-    .hide{display:none !important}
-    #ac-tool .a-accent{color:var(--a)} .b-accent{color:var(--b)}
+    #astro-system-tool-root .hide,
+    #ac-tool .hide{display:none !important}
+    #ac-tool .a-accent{color:var(--a)} #ac-tool .b-accent{color:var(--b)}
     #ac-tool .debug-note{margin-top:8px;padding:9px 11px;border:1px solid rgba(255,180,140,.25);border-radius:10px;background:rgba(255,180,140,.06);color:#ffd8c6;font-size:.79rem}
 
     /* ── Page banner ── */
@@ -505,9 +512,9 @@
        RESULTS — TAB 3: SCENARIO (heatmap)
     #ac-tool .heatmap-wrap{overflow-x:auto;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02)}
     #ac-tool .heatmap{width:100%;border-collapse:separate;border-spacing:0;min-width:0}
-    #ac-tool .heatmap th,.heatmap td{padding:8px 6px;text-align:center;border-right:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07);font-size:.77rem}
+    #ac-tool .heatmap th,#ac-tool .heatmap td{padding:8px 6px;text-align:center;border-right:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07);font-size:.77rem}
     #ac-tool .heatmap th{position:sticky;top:0;background:#101722;color:var(--muted);font-size:.73rem;z-index:1;font-weight:700}
-    #ac-tool .heatmap th:first-child,.heatmap td:first-child{position:sticky;left:0;background:#101722;z-index:2;font-weight:900;font-size:.73rem;color:var(--muted)}
+    #ac-tool .heatmap th:first-child,#ac-tool .heatmap td:first-child{position:sticky;left:0;background:#101722;z-index:2;font-weight:900;font-size:.73rem;color:var(--muted)}
     #ac-tool .heatmap-legend{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 0}
     #ac-tool .heatmap-legend-bar{height:8px;width:160px;border-radius:999px;background:linear-gradient(90deg,#142a86 0%,#2c68dd 18%,#66c7ff 36%,#f3edcd 50%,#f7d27d 66%,#f49a49 84%,#df3740 100%)}
     #ac-tool .heatmap-legend span{font-size:.69rem;color:var(--soft)}
@@ -545,7 +552,7 @@
     /* ── Responsive ── */
     @media(max-width:1100px){#ac-tool .tab-panel .two-col{grid-template-columns:1fr}}
     @media(max-width:900px){#ac-tool .setup-top-grid{grid-template-columns:1fr}#ac-tool .setup-top-grid > .setup-section{height:auto}#ac-tool .systems-grid{grid-template-columns:1fr}#ac-tool .metric-row{grid-template-columns:1fr 1fr}#ac-tool .setup-section-header{display:block}}
-    @media(max-width:680px){body{padding:10px}#ac-tool .result-hero{grid-template-columns:1fr;min-height:0}#ac-tool .gauge-wrap{display:flex;justify-content:center}#ac-tool .metric-row{grid-template-columns:1fr}#ac-tool .input-grid{grid-template-columns:1fr}#ac-tool .inline-triplet{grid-template-columns:1fr}#ac-tool .hero-aside{padding-left:0;border-left:none}#ac-tool .hero-rail{min-width:0}#ac-tool .target-mix-widget{grid-template-columns:1fr}#ac-tool .target-mix-svg{width:100%;justify-self:stretch}#ac-tool .hero-resolution-readouts{grid-template-columns:1fr}#ac-tool .banner-logo{position:relative;top:auto;right:auto;margin:0 0 10px auto;width:min(180px,52vw)}}
+    @media(max-width:680px){#astro-system-tool-root .astro-tool-app,#ac-tool{padding:10px}#ac-tool .result-hero{grid-template-columns:1fr;min-height:0}#ac-tool .gauge-wrap{display:flex;justify-content:center}#ac-tool .metric-row{grid-template-columns:1fr}#ac-tool .input-grid{grid-template-columns:1fr}#ac-tool .inline-triplet{grid-template-columns:1fr}#ac-tool .hero-aside{padding-left:0;border-left:none}#ac-tool .hero-rail{min-width:0}#ac-tool .target-mix-widget{grid-template-columns:1fr}#ac-tool .target-mix-svg{width:100%;justify-self:stretch}#ac-tool .hero-resolution-readouts{grid-template-columns:1fr}#ac-tool .banner-logo{position:relative;top:auto;right:auto;margin:0 0 10px auto;width:min(180px,52vw)}}
     @media(max-width:480px){#ac-tool .tab-btn{padding:8px 10px;font-size:.75rem}}
     #ac-tool .specs-table{width:100%;border-collapse:separate;border-spacing:0}
     #ac-tool .specs-table th,#ac-tool .specs-table td{padding:7px 10px;text-align:left;border-bottom:1px solid rgba(255,255,255,.07);font-size:.79rem;word-break:break-word}
