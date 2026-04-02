@@ -1,0 +1,19 @@
+Generated from master.html v2.4.5
+
+master.html
+  chars: 650820
+  bytes: 652410
+dist/app.css
+  chars: 71368
+  bytes: 71472
+dist/app.js
+  chars: 580474
+  bytes: 581940
+dist/embed-snippet.html
+  chars: 40
+  bytes: 40
+dist/DEPLOYMENT.md
+  chars: 825
+  bytes: 831
+
+Root mount id: astro-system-tool-root
