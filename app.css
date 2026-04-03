@@ -1,4 +1,4 @@
-/* Generated from master.html v2.4.5. Do not edit by hand. */
+/* Generated from master.html v2.4.7. Do not edit by hand. */
 /* ── Design tokens ── */
     :root{
       --bg0:#070b12; --bg1:#0d1622; --bg2:#121d2e;
@@ -214,6 +214,14 @@
     #ac-tool .faq-a p:last-child{margin-bottom:0}
     #ac-tool .faq-a code{font-family:monospace;background:rgba(124,224,195,.1);color:#a8f0d8;padding:1px 5px;border-radius:4px;font-size:.78rem}
     #ac-tool .faq-a .eq{font-family:monospace;display:block;background:rgba(255,255,255,.04);border-left:3px solid rgba(124,224,195,.4);padding:7px 12px;border-radius:0 6px 6px 0;margin:7px 0;color:#b8e8d0;font-size:.77rem}
+    #ac-tool .faq-example-list{display:grid;gap:8px;margin:10px 0}
+    #ac-tool .faq-example-card{padding:9px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.018))}
+    #ac-tool .faq-example-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:3px;font-size:.73rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+    #ac-tool .faq-example-role{color:var(--a,#7ce0c3)}
+    #ac-tool .faq-example-factor{color:#ffe6a1}
+    #ac-tool .faq-example-meta{font-size:.76rem;color:#d6e7f5;margin-bottom:3px}
+    #ac-tool .faq-example-metrics{font-size:.74rem;color:#a9c0d5;line-height:1.45}
+    #ac-tool .faq-example-note{font-size:.75rem;color:#cfe7d8;margin-top:4px}
 
     /* RESULTS — TAB 1: SUMMARY */
 
