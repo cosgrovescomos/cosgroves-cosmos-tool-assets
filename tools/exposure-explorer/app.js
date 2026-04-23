@@ -1,5 +1,9 @@
 /* Generated from Exposure-Tradeoff-Explorer-v1.0.0.html (v1.0.0). Do not edit by hand. */
 (function(){
+  const embedParams = new URLSearchParams(window.location.search);
+  if (embedParams.get("embed") === "1") {
+    document.body.classList.add("embedded-host");
+  }
   const root = document.getElementById('exposure-tool');
   if (!root) return;
   if (root.dataset.exposureExplorerMounted === '1') return;
