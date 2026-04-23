@@ -28,6 +28,37 @@
       <main class="results" id="resultsPanel"></main>
     </div>`;
 
+  let iframeResizeRaf = 0;
+  function sendHeightToParent() {
+    if (!window.parent || window.parent === window) return;
+    const doc = document.documentElement;
+    const body = document.body;
+    const height = Math.ceil(Math.max(
+      doc?.scrollHeight || 0,
+      body?.scrollHeight || 0,
+      doc?.offsetHeight || 0,
+      body?.offsetHeight || 0
+    ));
+    if (!height) return;
+    window.parent.postMessage({ type: "exposureExplorerResize", height }, "*");
+  }
+  function scheduleHeightToParent() {
+    if (iframeResizeRaf) window.cancelAnimationFrame(iframeResizeRaf);
+    iframeResizeRaf = window.requestAnimationFrame(() => {
+      iframeResizeRaf = 0;
+      sendHeightToParent();
+    });
+  }
+  window.addEventListener("load", scheduleHeightToParent);
+  window.addEventListener("resize", scheduleHeightToParent);
+  if ("ResizeObserver" in window) {
+    const iframeResizeObserver = new ResizeObserver(scheduleHeightToParent);
+    if (document.documentElement) iframeResizeObserver.observe(document.documentElement);
+    if (document.body) iframeResizeObserver.observe(document.body);
+    iframeResizeObserver.observe(root);
+  }
+  scheduleHeightToParent();
+
   const DATA = {
         defaults: {
           cameraId: "zwo-asi2600mm-pro",
