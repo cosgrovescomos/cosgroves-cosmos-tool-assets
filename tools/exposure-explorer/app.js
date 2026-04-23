@@ -2939,6 +2939,9 @@
         const modeOptions = camera.modes
           .map((mode) => `<option value="${mode.modeId}" ${mode.modeId === appState.modeId || (appState.modeId === "auto" && mode === camera.modes[0]) ? "selected" : ""}>${mode.modeName}</option>`)
           .join("");
+        const modeControl = camera.modes.length > 1
+          ? `<select id="modeId">${modeOptions}</select>`
+          : `<div class="readonly-value system-mode" aria-label="Camera mode">${camera.modes[0]?.modeName || "Fixed camera mode"}</div>`;
         const filterSetOptions = compatibleSets
           .map((set) => `<option value="${set.id}" ${set.id === activeFilterSet?.id ? "selected" : ""}>${set.label}</option>`)
           .join("");
@@ -2985,7 +2988,7 @@
             </div>
             <div class="field-grid">
               <div class="field"><label>Camera</label><select id="cameraId">${cameraOptions}</select></div>
-              <div class="field"><label>Mode</label><select id="modeId">${modeOptions}</select></div>
+              <div class="field"><label>Mode</label>${modeControl}</div>
               <div class="field"><label>Gain</label><input id="gain" type="number" inputmode="numeric" min="0" max="300" step="1" value="${appState.gain}"></div>
               <div class="field"><label>Sensor temp (°C)</label><input id="tempC" type="number" inputmode="numeric" min="-30" max="25" step="1" value="${appState.tempC}"></div>
               <div class="field"><label>Aperture (mm)</label><input id="apertureMm" type="number" inputmode="numeric" min="40" max="500" step="1" value="${appState.apertureMm}"></div>
@@ -6491,7 +6494,7 @@
           "optionalDarkCurrentEPerPxPerSec"
         ]);
         appState.cameraId = document.getElementById("cameraId").value;
-        appState.modeId = document.getElementById("modeId").value;
+        appState.modeId = document.getElementById("modeId")?.value || getCamera(appState.cameraId).modes[0].modeId;
         appState.gain = parseNumber("gain", appState.gain);
         appState.tempC = parseNumber("tempC", appState.tempC);
         appState.apertureMm = parseNumber("apertureMm", appState.apertureMm);
