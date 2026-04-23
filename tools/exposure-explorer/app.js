@@ -2,6 +2,7 @@
 (function(){
   const embedParams = new URLSearchParams(window.location.search);
   if (embedParams.get("embed") === "1") {
+    document.documentElement.classList.add("embedded-host");
     document.body.classList.add("embedded-host");
   }
   const root = document.getElementById('exposure-tool');
@@ -32,33 +33,40 @@
       <main class="results" id="resultsPanel"></main>
     </div>`;
 
-  let iframeResizeRaf = 0;
+  const isEmbedMode = document.body.classList.contains("embedded-host");
+  let iframeResizeTimer = 0;
+  let lastSentIframeHeight = 0;
   function sendHeightToParent() {
     if (!window.parent || window.parent === window) return;
-    const doc = document.documentElement;
-    const body = document.body;
-    const height = Math.ceil(Math.max(
-      doc?.scrollHeight || 0,
-      body?.scrollHeight || 0,
-      doc?.offsetHeight || 0,
-      body?.offsetHeight || 0
-    ));
+    const rootBox = root.getBoundingClientRect();
+    const bodyBox = document.body.getBoundingClientRect();
+    const bodyStyles = window.getComputedStyle(document.body);
+    const bodyPaddingBottom = parseFloat(bodyStyles.paddingBottom || "0") || 0;
+    const height = Math.ceil(isEmbedMode
+      ? Math.max(rootBox.bottom - bodyBox.top + bodyPaddingBottom, root.scrollHeight || 0)
+      : Math.max(
+          document.documentElement?.scrollHeight || 0,
+          document.body?.scrollHeight || 0,
+          document.documentElement?.offsetHeight || 0,
+          document.body?.offsetHeight || 0
+        )
+    );
     if (!height) return;
+    if (Math.abs(height - lastSentIframeHeight) <= 4) return;
+    lastSentIframeHeight = height;
     window.parent.postMessage({ type: "exposureExplorerResize", height }, "*");
   }
   function scheduleHeightToParent() {
-    if (iframeResizeRaf) window.cancelAnimationFrame(iframeResizeRaf);
-    iframeResizeRaf = window.requestAnimationFrame(() => {
-      iframeResizeRaf = 0;
+    if (iframeResizeTimer) window.clearTimeout(iframeResizeTimer);
+    iframeResizeTimer = window.setTimeout(() => {
+      iframeResizeTimer = 0;
       sendHeightToParent();
-    });
+    }, 75);
   }
   window.addEventListener("load", scheduleHeightToParent);
   window.addEventListener("resize", scheduleHeightToParent);
   if ("ResizeObserver" in window) {
     const iframeResizeObserver = new ResizeObserver(scheduleHeightToParent);
-    if (document.documentElement) iframeResizeObserver.observe(document.documentElement);
-    if (document.body) iframeResizeObserver.observe(document.body);
     iframeResizeObserver.observe(root);
   }
   scheduleHeightToParent();

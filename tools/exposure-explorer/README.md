@@ -25,7 +25,46 @@ The stable entry point is:
 
 ## How to embed
 
-The tool can be embedded into another page by loading its own stylesheet and script, then placing the root mount element on the page:
+For Squarespace or another parent page, embed the hosted tool with an iframe. The child page posts height updates with `window.postMessage()` using:
+
+- `type: "exposureExplorerResize"`
+- `height: <pixel height>`
+
+Use `?embed=1` in the iframe URL. Embedded mode disables the app's internal scrolling and sticky result pane so the iframe can grow as one continuous document.
+
+Use this parent-side snippet to resize the iframe automatically:
+
+```html
+<iframe
+  id="exposure-explorer-frame"
+  src="https://cosgrovescomos.github.io/cosgroves-cosmos-tool-assets/tools/exposure-explorer/index.html?embed=1"
+  title="Astro Exposure Explorer"
+  width="100%"
+  style="border:0; overflow:hidden; display:block; width:100%; min-height:1200px;"
+  scrolling="no"
+  loading="lazy"
+></iframe>
+
+<script>
+  (function () {
+    const frame = document.getElementById("exposure-explorer-frame");
+    const allowedOrigin = "https://cosgrovescomos.github.io";
+    if (!frame) return;
+
+    window.addEventListener("message", function (event) {
+      if (event.origin !== allowedOrigin) return;
+      if (!event.data || event.data.type !== "exposureExplorerResize") return;
+      const height = Number(event.data.height);
+      if (!Number.isFinite(height) || height < 300) return;
+      frame.style.height = Math.ceil(height) + "px";
+    });
+  })();
+</script>
+```
+
+The provided `embed-snippet.html` contains that iframe snippet.
+
+For direct same-page mounting, load this folder's own stylesheet and script with a root element:
 
 ```html
 <link rel="stylesheet" href="/tools/exposure-explorer/app.css" />
@@ -33,7 +72,7 @@ The tool can be embedded into another page by loading its own stylesheet and scr
 <script src="/tools/exposure-explorer/app.js"></script>
 ```
 
-The provided `embed-snippet.html` contains that exact snippet.
+Do not point an embed at root-level `app.css` or `app.js`.
 
 ## Source of truth and regeneration
 

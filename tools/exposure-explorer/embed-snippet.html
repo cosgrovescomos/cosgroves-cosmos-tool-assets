@@ -1,4 +1,26 @@
-<!-- Astro Exposure Explorer embed snippet -->
-<link rel="stylesheet" href="/tools/exposure-explorer/app.css" />
-<div id="exposure-tool"></div>
-<script src="/tools/exposure-explorer/app.js"></script>
+<!-- Astro Exposure Explorer iframe embed snippet for Squarespace or another parent page -->
+<iframe
+  id="exposure-explorer-frame"
+  src="https://cosgrovescomos.github.io/cosgroves-cosmos-tool-assets/tools/exposure-explorer/index.html?embed=1"
+  title="Astro Exposure Explorer"
+  width="100%"
+  style="border:0; overflow:hidden; display:block; width:100%; min-height:1200px;"
+  scrolling="no"
+  loading="lazy"
+></iframe>
+
+<script>
+  (function () {
+    const frame = document.getElementById("exposure-explorer-frame");
+    const allowedOrigin = "https://cosgrovescomos.github.io";
+    if (!frame) return;
+
+    window.addEventListener("message", function (event) {
+      if (event.origin !== allowedOrigin) return;
+      if (!event.data || event.data.type !== "exposureExplorerResize") return;
+      const height = Number(event.data.height);
+      if (!Number.isFinite(height) || height < 300) return;
+      frame.style.height = Math.ceil(height) + "px";
+    });
+  })();
+</script>
