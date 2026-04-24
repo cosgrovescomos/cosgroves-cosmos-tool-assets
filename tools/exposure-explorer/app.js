@@ -82,13 +82,13 @@
           fRatio: 7.0,
           throughputFrac: 0.82,
           centralObstructionFrac: 0,
-          filterSetId: "narrowband-sho-astronomik-6nm",
-          selectedFilters: ["astronomik-ha-6nm", "astronomik-oiii-6nm", "astronomik-sii-6nm"],
-          activeFilterId: "astronomik-ha-6nm",
-          calibrationFilterId: "astronomik-ha-6nm",
+          filterSetId: "broadband-lrgb-zwo",
+          selectedFilters: ["zwo-l", "zwo-r", "zwo-g", "zwo-b"],
+          activeFilterId: "zwo-l",
+          calibrationFilterId: "zwo-l",
           configLoadedFileName: "",
           configDirtySinceLoad: false,
-          skyInputMode: "manual",
+          skyInputMode: "bortle",
           skyBrightnessMagPerArcsec2: 20.8,
           sqmMeasurementMagPerArcsec2: 20.8,
           locationQuery: "",
@@ -97,7 +97,7 @@
           locationLookupLabel: "Manual site entry",
           locationLookupStatus: "Location is used for computed moon geometry.",
           locationContextType: "unknown",
-          bortleClass: 4,
+          bortleClass: 5,
           seeingArcsecFwhm: 2.5,
           planningDateTimeLocal: new Date().toISOString().slice(0,16),
           targetRaHours: 5.58,
@@ -116,7 +116,7 @@
           fieldPresetId: "average_field",
           captureSequencing: "filter_blocks",
           filterBlockLengthSubs: 10,
-          focusHandling: "focus_offsets_monitoring",
+          focusHandling: "refocus_every_change",
           ditherFrequency: "every_1",
           ditherSettleSec: 8,
           badFrameRiskTolerance: "medium",
@@ -912,6 +912,7 @@
         const imported = payload && typeof payload === "object" && payload.configuration && typeof payload.configuration === "object"
           ? payload.configuration
           : payload;
+        const importKind = payload && typeof payload === "object" ? (payload.exportType || payload.schema || "") : "";
         if (!imported || typeof imported !== "object") {
           throw new Error("JSON file does not contain a configuration object.");
         }
@@ -922,7 +923,9 @@
           }
         });
         Object.assign(appState, nextState, {
-          configIoStatus: "Configuration loaded from JSON file.",
+          configIoStatus: importKind === "filter-set-plan"
+            ? "Setup restored from a saved plan JSON. Full system state was reapplied."
+            : "Setup loaded from JSON file.",
           configIoStatusLevel: "success",
           configLoadedFileName: sourceName || appState.configLoadedFileName || "",
           configDirtySinceLoad: false
@@ -984,6 +987,447 @@
         anchor.click();
         anchor.remove();
         URL.revokeObjectURL(url);
+      }
+  
+      async function copyTextToClipboard(text) {
+        if (navigator.clipboard?.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (error) {
+            // Fall through to the legacy copy path below.
+          }
+        }
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "readonly");
+        textarea.style.position = "fixed";
+        textarea.style.top = "-9999px";
+        textarea.style.left = "-9999px";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length);
+        let copied = false;
+        try {
+          copied = document.execCommand("copy");
+        } catch (error) {
+          copied = false;
+        }
+        textarea.remove();
+        return copied;
+      }
+  
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+      }
+  
+      function drawRoundedRect(ctx, x, y, width, height, radius, fillStyle, strokeStyle = null, lineWidth = 1) {
+        const r = Math.min(radius, width / 2, height / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + width, y, x + width, y + height, r);
+        ctx.arcTo(x + width, y + height, x, y + height, r);
+        ctx.arcTo(x, y + height, x, y, r);
+        ctx.arcTo(x, y, x + width, y, r);
+        ctx.closePath();
+        if (fillStyle) {
+          ctx.fillStyle = fillStyle;
+          ctx.fill();
+        }
+        if (strokeStyle) {
+          ctx.lineWidth = lineWidth;
+          ctx.strokeStyle = strokeStyle;
+          ctx.stroke();
+        }
+      }
+  
+      function traceRoundedRectPath(ctx, x, y, width, height, radius) {
+        const r = Math.min(radius, width / 2, height / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + width, y, x + width, y + height, r);
+        ctx.arcTo(x + width, y + height, x, y + height, r);
+        ctx.arcTo(x, y + height, x, y, r);
+        ctx.arcTo(x, y, x + width, y, r);
+        ctx.closePath();
+      }
+  
+      function createZoneGradient(ctx, zoneName, x, width) {
+        const gradient = ctx.createLinearGradient(x, 0, x + width, 0);
+        const stops = {
+          too_short: ["#7d8fc6", "#6374a9"],
+          lower_floor_gap: ["#96a3b4", "#75879a"],
+          lean_workable: ["#43ade8", "#2f8fcd"],
+          sweet_spot: ["#60d98d", "#43ba74"],
+          long_risky: ["#efd158", "#d4ad29"],
+          too_long: ["#ef8a4b", "#c45c2f"]
+        }[zoneName] || ["#7d8fc6", "#6374a9"];
+        gradient.addColorStop(0, stops[0]);
+        gradient.addColorStop(1, stops[1]);
+        return gradient;
+      }
+  
+      function wrapCanvasText(ctx, text, maxWidth) {
+        const words = String(text || "").split(/\s+/).filter(Boolean);
+        if (!words.length) return [""];
+        const lines = [];
+        let current = words.shift();
+        words.forEach((word) => {
+          const next = `${current} ${word}`;
+          if (ctx.measureText(next).width <= maxWidth) {
+            current = next;
+          } else {
+            lines.push(current);
+            current = word;
+          }
+        });
+        lines.push(current);
+        return lines;
+      }
+  
+      function drawCanvasWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 3) {
+        const lines = wrapCanvasText(ctx, text, maxWidth).slice(0, maxLines);
+        lines.forEach((line, index) => ctx.fillText(line, x, y + index * lineHeight));
+        return lines.length;
+      }
+  
+      function drawCanvasPill(ctx, text, x, y, maxWidth, tone = "dark") {
+        ctx.save();
+        ctx.font = "600 18px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        const label = String(text || "");
+        const textWidth = Math.min(ctx.measureText(label).width, maxWidth - 28);
+        const width = Math.min(maxWidth, Math.max(82, textWidth + 28));
+        const palette = tone === "accent"
+          ? { fill: "#203744", stroke: "#4b9eb7", text: "#d8f4ff" }
+          : { fill: "#111827", stroke: "rgba(245, 210, 84, 0.25)", text: "#f8fafc" };
+        drawRoundedRect(ctx, x - width / 2, y, width, 30, 15, palette.fill, palette.stroke, 1.2);
+        ctx.fillStyle = palette.text;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, x, y + 15);
+        ctx.restore();
+      }
+  
+      function drawThresholdMarker(ctx, x, railTop, barHeight, label) {
+        ctx.save();
+        drawCanvasPill(ctx, label, x, railTop - 52, 150);
+        ctx.strokeStyle = "rgba(255,255,255,0.28)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(x, railTop - 16);
+        ctx.lineTo(x, railTop + barHeight + 8);
+        ctx.stroke();
+        ctx.restore();
+      }
+  
+      function drawHeroExportCanvas(results) {
+        const multiFilterMode = results.length > 1;
+        const camera = getCamera(appState.cameraId);
+        const canvasWidth = 1800;
+        const panelPadding = 36;
+        const outerPadding = 28;
+        const rowHeight = multiFilterMode ? 210 : 300;
+        const titleHeight = 84;
+        const legendHeight = 88;
+        const axisHeight = 56;
+        const canvasHeight = outerPadding * 2 + titleHeight + results.length * rowHeight + legendHeight + axisHeight + 12;
+        const canvas = document.createElement("canvas");
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        const ctx = canvas.getContext("2d");
+  
+        ctx.fillStyle = "#0b1220";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        const bgGradient = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
+        bgGradient.addColorStop(0, "#13263a");
+        bgGradient.addColorStop(1, "#0f1727");
+        drawRoundedRect(ctx, outerPadding, outerPadding, canvasWidth - outerPadding * 2, canvasHeight - outerPadding * 2, 26, bgGradient, "rgba(112, 201, 193, 0.22)", 2);
+  
+        ctx.fillStyle = "#f2cb62";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        ctx.font = "900 34px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        ctx.fillText("EXPOSURE RECOMMENDATIONS", outerPadding + panelPadding, outerPadding + 48);
+        ctx.font = "400 22px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        ctx.fillStyle = "#a8bbd3";
+        ctx.fillText(
+          multiFilterMode
+            ? "Shared-scale filter plan across the active set"
+            : `${results[0].input.filter.name} recommendation overview`,
+          outerPadding + panelPadding,
+          outerPadding + 78
+        );
+  
+        const domainBase = multiFilterMode
+          ? Math.max(...results.map((result) => result.thresholds.hardMaxSec * 1.08), 120)
+          : Math.max(results[0].thresholds.hardMaxSec * 1.08, results[0].thresholds.sweetSpotMaxSec * 1.15, 120);
+        const axis = buildAxisTicks(domainBase);
+        const maxDomain = axis.majorTicks[axis.majorTicks.length - 1];
+        const barStartX = outerPadding + panelPadding + 360;
+        const barEndX = canvasWidth - outerPadding - panelPadding - 160;
+        const barWidth = barEndX - barStartX;
+        const posX = (value) => barStartX + clamp(value / maxDomain, 0, 1) * barWidth;
+  
+        results.forEach((result, index) => {
+          const y = outerPadding + titleHeight + index * rowHeight;
+          const cardX = outerPadding + panelPadding;
+          const cardY = y + 10;
+          const cardWidth = canvasWidth - (outerPadding + panelPadding) * 2;
+          const cardHeight = multiFilterMode ? 178 : 250;
+          const cardGradient = ctx.createLinearGradient(cardX, cardY, cardX + cardWidth, cardY + cardHeight);
+          cardGradient.addColorStop(0, "#142436");
+          cardGradient.addColorStop(1, "#13202e");
+          drawRoundedRect(ctx, cardX, cardY, cardWidth, cardHeight, 22, cardGradient, "rgba(112, 201, 193, 0.18)", 2);
+  
+          ctx.textAlign = "left";
+          ctx.textBaseline = "alphabetic";
+          ctx.fillStyle = "#f8fafc";
+          ctx.font = "700 24px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.fillText(result.input.filter.name, cardX + 22, cardY + 34);
+          ctx.fillStyle = "#bfd0e5";
+          ctx.font = "600 14px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          drawCanvasWrappedText(
+            ctx,
+            `Lower-bound source: ${result.thresholds.lowerBoundSource === "measured" ? "Measured calibration" : "Modeled planning sky"} · ${result.synthesis.upperBoundDrivers[0]?.label || "Bright-star saturation"} · Weight 1×`,
+            cardX + 22,
+            cardY + 62,
+            300,
+            22,
+            4
+          );
+  
+          ctx.textAlign = "right";
+          ctx.fillStyle = "#f8fafc";
+          ctx.font = "700 22px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.fillText(fmtSeconds(result.headlineRecommendation.anchorSec), cardX + cardWidth - 22, cardY + 34);
+          ctx.fillStyle = "#bfd0e5";
+          ctx.font = "600 14px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.fillText(fmtRange(result.thresholds.sweetSpotMinSec, result.thresholds.sweetSpotMaxSec), cardX + cardWidth - 22, cardY + 62);
+          ctx.textAlign = "left";
+  
+          const railTop = cardY + 56;
+          const barHeight = 64;
+          drawRoundedRect(ctx, barStartX, railTop, barWidth, barHeight, 28, "#0c1420", "rgba(255,255,255,0.16)", 1.5);
+          const zones = buildDisplayRailZones(result);
+          ctx.save();
+          traceRoundedRectPath(ctx, barStartX, railTop, barWidth, barHeight, 28);
+          ctx.clip();
+          zones.forEach((zone) => {
+            const zoneStart = posX(zone.startSec);
+            const zoneEnd = zone.endSec == null ? barEndX : posX(zone.endSec);
+            const width = Math.max(4, zoneEnd - zoneStart);
+            ctx.fillStyle = createZoneGradient(ctx, zone.name, zoneStart, width);
+            ctx.fillRect(zoneStart, railTop, width, barHeight);
+            const names = zoneNames(zone.name);
+            if (width > 150) {
+              ctx.fillStyle = zone.name === "too_short" || zone.name === "lower_floor_gap" ? "#0b1320" : "#f8fafc";
+              ctx.font = "700 18px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText(names.short, zoneStart + width / 2, railTop + barHeight / 2);
+            }
+          });
+          ctx.restore();
+  
+          const sweetStartX = posX(result.thresholds.sweetSpotMinSec);
+          const sweetEndX = posX(result.thresholds.sweetSpotMaxSec);
+          drawRoundedRect(ctx, sweetStartX, railTop + 8, Math.max(6, sweetEndX - sweetStartX), barHeight - 16, 20, null, "rgba(255,255,255,0.92)", 3);
+  
+          const anchorX = posX(result.headlineRecommendation.anchorSec);
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(anchorX, railTop - 2);
+          ctx.lineTo(anchorX, railTop + barHeight + 16);
+          ctx.stroke();
+          drawRoundedRect(ctx, anchorX - 2, railTop - 2, 4, barHeight + 16, 2, "rgba(255,255,255,0.95)");
+  
+          const markers = [
+            { label: "Op start", value: result.thresholds.sweetSpotMinSec },
+            ...(result.thresholds.skyPedestalCautionSec <= maxDomain * 1.02 ? [{ label: "Sky", value: result.thresholds.skyPedestalCautionSec }] : []),
+            { label: "Sat", value: result.thresholds.saturationCautionSec },
+            { label: "Ceiling", value: result.thresholds.hardMaxSec }
+          ];
+          markers.forEach((marker) => {
+            drawThresholdMarker(ctx, posX(marker.value), railTop, barHeight, marker.label);
+          });
+        });
+  
+        const axisY = outerPadding + titleHeight + results.length * rowHeight + 8;
+        ctx.strokeStyle = "rgba(196, 210, 226, 0.75)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(barStartX, axisY);
+        ctx.lineTo(barEndX, axisY);
+        ctx.stroke();
+        axis.minorTicks.forEach((tick) => {
+          const x = posX(tick);
+          ctx.strokeStyle = "rgba(196, 210, 226, 0.28)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x, axisY - 10);
+          ctx.lineTo(x, axisY + 10);
+          ctx.stroke();
+        });
+        axis.majorTicks.forEach((tick) => {
+          const x = posX(tick);
+          ctx.strokeStyle = "rgba(220, 231, 243, 0.72)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(x, axisY - 18);
+          ctx.lineTo(x, axisY + 18);
+          ctx.stroke();
+          ctx.fillStyle = "#d8e4f1";
+          ctx.font = "700 15px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          ctx.textAlign = tick === 0 ? "left" : tick === maxDomain ? "right" : "center";
+          ctx.fillText(`${tick}s`, x, axisY + 42);
+        });
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#c5d3e2";
+        ctx.font = "700 18px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        ctx.fillText("exposure time", barEndX, axisY + 78);
+  
+        const legendItems = [
+          ["Read Noise Regime", "#7386bf"],
+          ["Overhead / Practical Floor", "#8393a4"],
+          ["Sensor/Shot Noise Regime", "#39a2de"],
+          ["Practical Operating Band", "#4cc67b"],
+          ["Saturation / Workflow Risk", "#deb939"],
+          ["Hard Ceiling", "#db713d"]
+        ];
+        let legendX = outerPadding + panelPadding;
+        let legendY = axisY + 92;
+        legendItems.forEach(([label, color]) => {
+          ctx.font = "600 18px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+          const pillWidth = ctx.measureText(label).width + 52;
+          if (legendX + pillWidth > canvasWidth - outerPadding - panelPadding) {
+            legendX = outerPadding + panelPadding;
+            legendY += 48;
+          }
+          drawRoundedRect(ctx, legendX, legendY - 24, pillWidth, 38, 18, "rgba(255,255,255,0.06)", "rgba(255,255,255,0.16)", 1.2);
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(legendX + 20, legendY - 5, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#e5edf6";
+          ctx.textAlign = "left";
+          ctx.fillText(label, legendX + 36, legendY);
+          legendX += pillWidth + 14;
+        });
+  
+        return canvas;
+      }
+  
+      function inlineComputedStyles(source, target) {
+        const computed = window.getComputedStyle(source);
+        const styleText = Array.from(computed)
+          .map((property) => `${property}:${computed.getPropertyValue(property)};`)
+          .join("");
+        target.setAttribute("style", styleText);
+      }
+  
+      function cloneNodeWithInlineStyles(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return document.createTextNode(node.textContent || "");
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+          return document.createTextNode("");
+        }
+        const sourceEl = node;
+        const clone = sourceEl.cloneNode(false);
+        inlineComputedStyles(sourceEl, clone);
+        if (clone instanceof HTMLElement && sourceEl instanceof HTMLInputElement) {
+          clone.setAttribute("value", sourceEl.value);
+        }
+        Array.from(sourceEl.childNodes).forEach((child) => {
+          clone.appendChild(cloneNodeWithInlineStyles(child));
+        });
+        return clone;
+      }
+  
+      async function renderElementToPngBlob(element, { scale = 2 } = {}) {
+        if (!element) throw new Error("Export target not found.");
+        const rect = element.getBoundingClientRect();
+        const width = Math.ceil(rect.width);
+        const height = Math.ceil(rect.height);
+        if (!width || !height) throw new Error("Export target has no visible size.");
+  
+        const cloned = cloneNodeWithInlineStyles(element);
+        cloned.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+        cloned.style.margin = "0";
+        cloned.style.width = `${width}px`;
+        cloned.style.height = `${height}px`;
+        cloned.style.boxSizing = "border-box";
+  
+        const wrapper = document.createElement("div");
+        wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+        wrapper.style.width = `${width}px`;
+        wrapper.style.height = `${height}px`;
+        wrapper.style.margin = "0";
+        wrapper.style.padding = "0";
+        wrapper.style.background = "transparent";
+        wrapper.appendChild(cloned);
+  
+        const svgMarkup = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="${width * scale}" height="${height * scale}" viewBox="0 0 ${width} ${height}">
+            <foreignObject x="0" y="0" width="${width}" height="${height}">
+              ${new XMLSerializer().serializeToString(wrapper)}
+            </foreignObject>
+          </svg>
+        `;
+        const blob = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        try {
+          const image = await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error("DOM capture image decode failed."));
+            img.src = url;
+          });
+          const canvas = document.createElement("canvas");
+          canvas.width = width * scale;
+          canvas.height = height * scale;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+          const pngBlob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+          if (!pngBlob) throw new Error("PNG export failed.");
+          return pngBlob;
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      }
+  
+      async function renderHeroGraphicBlob(results) {
+        if (!Array.isArray(results) || !results.length) throw new Error("No results available for hero export.");
+        if (document.fonts?.ready) {
+          try {
+            await document.fonts.ready;
+          } catch (error) {
+            // Continue even if font readiness is unavailable.
+          }
+        }
+        const liveHero = document.getElementById("heroRecommendation");
+        if (liveHero) {
+          try {
+            return await renderElementToPngBlob(liveHero, { scale: 2 });
+          } catch (error) {
+            console.warn("Live hero capture failed, falling back to canvas redraw.", error);
+          }
+        }
+        const canvas = drawHeroExportCanvas(results);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+        if (!blob) throw new Error("PNG export failed.");
+        return blob;
       }
   
       
@@ -2496,39 +2940,83 @@
   
       function describeSkySourceForUser(result) {
         if (result.thresholds.skyPedestalSource === "measured_test_frame") {
-          return `This filter is using the measured test frame as its sky source. That means the lower-bound side and the sky-headroom side are both tied to the same measured frame, so changing Bortle or SQM should not move this calibrated filter very much.`;
+          return `This filter is using the measured test frame instead of the planning sky estimate. Because the same test frame is anchoring the background side here, changing Bortle or SQM should not move this calibrated filter very much.`;
         }
-        return `This filter is using the planned sky estimate as its sky source. That means Bortle, SQM, moon, transparency, and altitude assumptions can all move the upper-side background-headroom limit.`;
+        return `This filter is using your planned sky estimate, not a measured test frame. That means Bortle, SQM, moon, transparency, and altitude can all move the upper limit.`;
       }
   
       function explainLowerDriverForUser(result) {
         const driver = result.synthesis.lowerBoundDrivers[0]?.label || "Read noise";
         const t = result.thresholds;
         if (driver === "Frame overhead") {
-          return `The lower side is being held up more by capture overhead than by pure read noise. In practice that means very short subs would waste too much time in dead time, so the tool delays the working range until about ${fmtSeconds(t.lowerBoundSec)}.`;
+          return `Shorter subs would spend too much of the night in overhead instead of collecting signal. That is why the tool does not call this filter comfortably workable until about ${fmtSeconds(t.lowerBoundSec)}.`;
         }
         if (driver === "Practical floor") {
-          return `The lower side is being held up by the tool’s narrowband practical floor. This is not saying the physics floor is later; it is saying shorter subs would be operationally awkward for this filter and workflow.`;
+          return `For this narrowband filter, the tool is steering away from very short subs that may work on paper but are usually awkward in real imaging. In plain terms, it is treating ${fmtSeconds(t.lowerBoundSec)} as the first comfortably practical sub length.`;
         }
-        return `The lower side is mainly being set by read-noise clearance. The frame needs enough real background signal to make read noise a smaller share of the stack penalty, which for this setup happens around ${fmtSeconds(t.lowerBoundSec)}.`;
+        return `The filter mainly needs a little more exposure time to get clear of the read-noise penalty. For this setup, that happens at about ${fmtSeconds(t.lowerBoundSec)}.`;
       }
   
       function explainUpperDriverForUser(result) {
         const driver = result.synthesis.upperBoundDrivers[0]?.label || "Bright-star saturation";
         const t = result.thresholds;
         if (driver === "Sky-pedestal headroom") {
-          return `The upper side is being limited more by background build-up than by immediate star clipping. In plain terms, the sky itself is eating enough dynamic-range headroom that longer subs become less forgiving for faint background structure.`;
+          return `The sky background is building up enough that longer subs become less forgiving. In plain terms, the background itself is using too much of the sensor’s headroom.`;
         }
         if (driver === "Workflow hard max") {
-          return `The upper side is being limited more by workflow cost than by the sensor alone. Longer subs may still be physically possible, but they become less attractive because each lost frame costs more time and flexibility.`;
+          return `Longer subs are becoming unattractive mostly for operational reasons. They may still be physically possible, but each lost frame would cost too much time and flexibility.`;
         }
-        return `The upper side is being limited mainly by bright-star headroom. In plain terms, representative bright structures are reaching the model’s caution zone before background headroom or workflow becomes the first limit.`;
+        return `Bright stars are the main reason not to keep stretching this sub length. They start running into the model’s caution zone before sky background or workflow becomes the first limit.`;
       }
   
       function buildNetEffectSummary(result) {
         const lowerDriver = result.synthesis.lowerBoundDrivers[0]?.label || "Read noise";
         const upperDriver = result.synthesis.upperBoundDrivers[0]?.label || "Bright-star saturation";
-        return `Net effect: this filter becomes workable at about ${fmtSeconds(result.thresholds.sweetSpotMinSec)} because of ${lowerDriver.toLowerCase()}, and it stops being comfortably forgiving near ${fmtSeconds(result.thresholds.sweetSpotMaxSec)} because of ${upperDriver.toLowerCase()}.`;
+        const lowerPhrase = lowerDriver === "Practical floor"
+          ? "the minimum practical sub length for this filter"
+          : lowerDriver === "Frame overhead"
+            ? "capture overhead"
+            : "read-noise clearance";
+        const upperPhrase = upperDriver === "Bright-star saturation"
+          ? "bright-star saturation"
+          : upperDriver === "Sky-pedestal headroom"
+            ? "sky-background headroom"
+            : "workflow limits";
+        return `A sensible starting point appears near ${fmtSeconds(result.thresholds.sweetSpotMinSec)} because of ${lowerPhrase}, and the plan becomes less forgiving near ${fmtSeconds(result.thresholds.sweetSpotMaxSec)} because of ${upperPhrase}.`;
+      }
+  
+      function summarizeWorkflowDisplay(workflow, results) {
+        if (!workflow) {
+          return {
+            headline: "Workflow effect is minor",
+            advisory: "Workflow settings mainly tune convenience and simplification, not the underlying physics."
+          };
+        }
+        const multiFilter = Array.isArray(results) && results.length > 1;
+        const anchors = multiFilter ? results.map((result) => result.headlineRecommendation.anchorSec) : [];
+        const anchorSpread = anchors.length ? Math.max(...anchors) - Math.min(...anchors) : 0;
+        const sharedFeasible = multiFilter && anchorSpread <= 120;
+  
+        if (workflow.captureSequencing === "filter_cycling" && workflow.focusHandling === "refocus_every_change") {
+          return {
+            headline: `${workflow.switchingPenalty} switching cost · balanced coverage`,
+            advisory: "Cycling keeps filter coverage balanced, but refocusing on every filter change makes the switching overhead more noticeable."
+          };
+        }
+        if (workflow.captureSequencing === "filter_cycling") {
+          return {
+            headline: `${workflow.switchingPenalty} switching cost · balanced coverage`,
+            advisory: sharedFeasible
+              ? "Cycling keeps the session balanced across filters, and without refocus-on-change its switching cost is usually fairly modest."
+              : "Cycling keeps the session balanced across filters. Without refocus-on-change, its switching cost is usually modest enough that the plan is still driven mostly by the filter-specific numbers."
+          };
+        }
+        return {
+          headline: `${workflow.switchingPenalty} switching cost · block-friendly`,
+          advisory: sharedFeasible
+            ? `${fmtNumber(workflow.filterBlockLengthSubs, 0)}-sub blocks keep switching overhead low, but cycling would still be a reasonable choice if you prefer more even filter coverage.`
+            : `${fmtNumber(workflow.filterBlockLengthSubs, 0)}-sub blocks keep switching overhead low. That slightly favors distinct per-filter starts, but it is still a convenience effect rather than a hard rule.`
+        };
       }
   
       function computeConfidence(input, result) {
@@ -2969,8 +3457,8 @@
         document.getElementById("setupPanel").innerHTML = `
           ${setupGroup("setupOpenConfig", "Saved setups", "Save, load, and track complete system setups", `
             <div class="actions">
-              <button type="button" class="primary" id="saveConfigJson">Save JSON</button>
-              <button type="button" class="ghost" id="loadConfigJson">Load JSON</button>
+              <button type="button" class="primary" id="saveConfigJson">Save Setup (JSON)</button>
+              <button type="button" class="ghost" id="loadConfigJson">Load Setup (JSON)</button>
             </div>
             <input id="configFileInput" type="file" accept=".json,application/json" style="display:none" />
             ${appState.configLoadedFileName ? `
@@ -3459,13 +3947,13 @@
         const anchors = results.map((result) => result.headlineRecommendation.anchorSec);
         const anchorSpread = Math.max(...anchors) - Math.min(...anchors);
         if (workflow.captureSequencing === "filter_cycling" && workflow.focusHandling === "refocus_every_change") {
-          return "Frequent filter switching with full autofocus increases the cost of cycling filters.";
+          return "Cycling keeps filter coverage balanced, but full refocus on each filter change makes switching overhead more noticeable.";
         }
         if (workflow.favorsSharedExposure === "Shared exposure favored" && anchorSpread <= 120) {
-          return "Current workflow makes a shared exposure across the set more practical.";
+          return "The filter spread is small, and this workflow keeps a shared exposure reasonably practical if you want to simplify.";
         }
         if (workflow.favorsSharedExposure === "Per-filter starts favored" && anchorSpread > 60) {
-          return "Current workflow favors keeping per-filter starts distinct.";
+          return "The current block-style workflow slightly favors keeping the starts distinct, but this is a convenience preference rather than a hard constraint.";
         }
         if (anchorSpread <= 60) {
           return "Per-filter spread is small; a shared exposure may be practical.";
@@ -3502,6 +3990,112 @@
         ].filter(Boolean).join("\n");
       }
   
+      function buildPlanExportPayload(results) {
+        const camera = getCamera(appState.cameraId);
+        const filterSet = resolveFilterSet(appState.filterSetId, camera);
+        const weights = normalizedPlanWeights(results);
+        const planName = effectivePlanName(results);
+        const savedAt = new Date().toISOString();
+        const serializedConfiguration = serializeConfiguration();
+        const operatingRange = {
+          startSec: Math.min(...results.map((result) => result.thresholds.sweetSpotMinSec)),
+          endSec: Math.max(...results.map((result) => result.thresholds.sweetSpotMaxSec))
+        };
+        return {
+          schema: CONFIG_SCHEMA,
+          schemaVersion: CONFIG_VERSION,
+          tool: "Astro Exposure Explorer",
+          version: currentToolVersion(),
+          exportType: "filter-set-plan",
+          savedAt,
+          planName,
+          configuration: serializedConfiguration.configuration,
+          filterSet: {
+            id: filterSet?.id || appState.filterSetId || "custom",
+            label: filterSet?.label || "Custom set"
+          },
+          camera: {
+            id: camera.cameraId,
+            manufacturer: camera.manufacturer,
+            name: camera.name
+          },
+          mode: appState.exposureMode === "empirical" ? "Empirical calibration" : "Planning",
+          readNoiseContributionTargetPct: appState.readNoiseContributionTargetPct,
+          weighting: {
+            preset: appState.planWeightPreset,
+            label: weightLabelForPreset(appState.planWeightPreset),
+            perFilter: results.map((result) => ({
+              filterId: result.filterId,
+              filter: result.input.filter.name,
+              familyCode: planFamilyCode(result),
+              weight: weights[result.filterId]
+            }))
+          },
+          workflow: {
+            captureSequencing: appState.captureSequencing,
+            captureSequencingLabel: captureSequencingLabel(appState.captureSequencing),
+            focusHandling: appState.focusHandling,
+            focusHandlingLabel: focusHandlingLabel(appState.focusHandling)
+          },
+          operatingRange,
+          advisory: buildPlanAdvisory(results) || "",
+          summaryText: buildPlanExportText(results),
+          filters: results.map((result) => ({
+            filterId: result.filterId,
+            filter: result.input.filter.name,
+            suggestedStartSec: result.headlineRecommendation.anchorSec,
+            operatingBandStartSec: result.thresholds.sweetSpotMinSec,
+            operatingBandEndSec: result.thresholds.sweetSpotMaxSec,
+            hardCeilingSec: result.thresholds.hardMaxSec,
+            lowerDriver: result.synthesis.lowerBoundDrivers[0]?.label || "",
+            upperDriver: result.synthesis.upperBoundDrivers[0]?.label || ""
+          }))
+        };
+      }
+  
+      function buildHeroExportFileName(results) {
+        const camera = getCamera(appState.cameraId);
+        const filterSet = resolveFilterSet(appState.filterSetId, camera);
+        const baseLabel = filterSet?.label
+          || (results.length === 1 ? results[0].input.filter.name : effectivePlanName(results))
+          || "exposure-recommendations";
+        const safeBase = String(baseLabel)
+          .replace(/[^a-z0-9]+/gi, "-")
+          .replace(/^-+|-+$/g, "")
+          .toLowerCase();
+        return `${safeBase || "exposure-recommendations"}-exposure-recommendations.png`;
+      }
+  
+      function renderPlanControls(results, { showWeightPreset = true } = {}) {
+        const activePreset = sanitizePlanWeightPreset(results);
+        const weightOptions = availablePlanWeightPresets(results);
+        return `
+          <div class="plan-actions">
+            ${showWeightPreset ? `
+              <select id="planWeightPreset">
+                ${weightOptions.map((option) => `<option value="${option.value}" ${activePreset === option.value ? "selected" : ""}>${option.label}</option>`).join("")}
+              </select>
+            ` : ""}
+            <button type="button" class="ghost" id="copyPlanSummary">Copy Summary</button>
+            <button type="button" class="ghost" id="exportPlanSummary">Export Summary (TXT)</button>
+            <button type="button" class="ghost" id="exportPlanJson">Export Summary (JSON)</button>
+            <button type="button" class="ghost" id="copyHeroGraphic">Copy Hero Graphic</button>
+            <button type="button" class="ghost" id="exportHeroGraphic">Export Hero Graphic (PNG)</button>
+          </div>
+        `;
+      }
+  
+      function renderPlanStatus(results, fallbackText = "") {
+        const activePreset = sanitizePlanWeightPreset(results);
+        const weights = normalizedPlanWeights(results);
+        const weightSummary = results
+          .filter((result) => weights[result.filterId] > 0)
+          .map((result) => `${planFamilyCode(result)}×${weights[result.filterId]}`)
+          .join(" · ");
+        const advisory = buildPlanAdvisory(results);
+        return appState.planStatus ? appState.planStatus : (fallbackText || `${weightLabelForPreset(activePreset)} · ${weightSummary || "No active weighted filters"}${advisory ? ` · ${advisory}` : ""}`);
+      }
+  
       function renderSetPlan(results) {
         const activePreset = sanitizePlanWeightPreset(results);
         const maxDomainBase = Math.max(...results.map((result) => result.thresholds.hardMaxSec * 1.08), 120);
@@ -3509,8 +4103,6 @@
         const maxDomain = axis.majorTicks[axis.majorTicks.length - 1];
         const pos = (value) => clamp((value / maxDomain) * 100, 0, 100);
         const weights = normalizedPlanWeights(results);
-        const planName = effectivePlanName(results);
-        const weightOptions = availablePlanWeightPresets(results);
         const weightSummary = results
           .filter((result) => weights[result.filterId] > 0)
           .map((result) => `${planFamilyCode(result)}×${weights[result.filterId]}`)
@@ -3522,31 +4114,12 @@
         const advisory = buildPlanAdvisory(results);
         return `
           <section class="card section section-quiet">
-            <div class="section-label">Filter Set Plan</div>
+            <div class="section-label section-label-major">Filter Set Plan</div>
             <div class="plan-shell">
-              <div class="plan-summary">
-                <div class="plan-card">
-                  <h4>Suggested starts by filter</h4>
-                  <div class="plan-main">${results.map((result) => `${planFamilyCode(result)} ${fmtSeconds(result.headlineRecommendation.anchorSec)}`).join(" · ")}</div>
-                  <div class="plan-sub">Direct computed starts for the active filters.</div>
-                </div>
-                <div class="plan-card">
-                  <h4>Set operating range</h4>
-                  <div class="plan-main">${setOperatingSpan}</div>
-                  <div class="plan-sub">${advisory || "Operating-band extent across the selected filters."}</div>
-                </div>
+              <div class="plan-toolbar">
+                ${renderPlanControls(results, { showWeightPreset: true })}
+                <div class="plan-status">${renderPlanStatus(results, `${weightLabelForPreset(activePreset)} · ${weightSummary || "No active weighted filters"}${advisory ? ` · ${advisory}` : ""}`)}</div>
               </div>
-              <div class="plan-actions">
-                <input id="planName" class="plan-name" type="text" value="${escapeHtml(planName)}" placeholder="Plan name" />
-                <select id="planWeightPreset">
-                  ${weightOptions.map((option) => `<option value="${option.value}" ${activePreset === option.value ? "selected" : ""}>${option.label}</option>`).join("")}
-                </select>
-                <button type="button" class="ghost" id="namePlan">Name Plan</button>
-                <button type="button" class="primary" id="savePlan">Save Plan</button>
-                <button type="button" class="ghost" id="copyPlanSummary">Copy Plan Summary</button>
-                <button type="button" class="ghost" id="exportPlanSummary">Export Plan Summary</button>
-              </div>
-              <div class="plan-status">${appState.planStatus ? appState.planStatus : `${weightLabelForPreset(activePreset)} · ${weightSummary || "No active weighted filters"}${advisory ? ` · ${advisory}` : ""}`}</div>
               <div class="set-overview">
                 <div class="set-overview-head">
                   <div>
@@ -3713,40 +4286,48 @@
       function renderSelectedFilterDetail(result) {
         const titleToneClass = filterToneClass(result.input.filter);
         const allResults = computeAllResults();
+        const lowerDriver = result.synthesis.lowerBoundDrivers[0]?.label || "Read noise";
+        const upperDriver = result.synthesis.upperBoundDrivers[0]?.label || "Bright-star saturation";
         return `
           <section class="card section section-quiet">
             <div class="detail-shell">
               <div class="detail-head">
                 <div>
-                  <div class="section-label">Selected Filter Detail</div>
+                  <div class="section-label section-label-major">Selected Filter Detail</div>
                   <div class="detail-title ${titleToneClass}">${result.input.filter.name}</div>
                   <div class="detail-sub">Only one filter’s technical detail is shown at a time. Click a row in the set overview or a tab to switch filters.</div>
                 </div>
                 ${renderFilterTabs(allResults)}
               </div>
               ${renderFilterDifferenceCard(result, allResults)}
-              <section class="cards-3" style="margin-bottom:16px">
-                <div class="mini-card">
-                  <h3>What sets the lower side?</h3>
-                  <div class="small-note">${explainLowerDriverForUser(result)}</div>
+              <section class="interpret-strip" style="margin-bottom:12px">
+                <div class="interpret-item">
+                  <div class="k">Why not shorter</div>
+                  <div class="v">${explainLowerDriverForUser(result)}</div>
                 </div>
-                <div class="mini-card">
-                  <h3>What sets the upper side?</h3>
-                  <div class="small-note">${explainUpperDriverForUser(result)}</div>
+                <div class="interpret-item">
+                  <div class="k">Why not longer</div>
+                  <div class="v">${explainUpperDriverForUser(result)}</div>
                 </div>
-                <div class="mini-card">
-                  <h3>How sky is being used here</h3>
-                  <div class="small-note">${describeSkySourceForUser(result)}</div>
+                <div class="interpret-item">
+                  <div class="k">How sky matters</div>
+                  <div class="v">${describeSkySourceForUser(result)}</div>
+                </div>
+                <div class="interpret-item">
+                  <div class="k">Good starting point</div>
+                  <div class="v">${buildNetEffectSummary(result)}</div>
                 </div>
               </section>
-              <div class="compact-note" style="margin-bottom:14px">${buildNetEffectSummary(result)}</div>
               <section class="thresholds-section">
                 ${renderThresholdCards(result)}
-                ${result.thresholds.practicalFloorSec ? `<div class="compact-note">Narrowband practical floor in ${result.input.workflow.subExposureStrategy} mode: <strong>${fmtSeconds(result.thresholds.practicalFloorSec)}</strong>.</div>` : ""}
+                ${result.thresholds.practicalFloorSec ? `<div class="compact-note">Practical floor active: ${fmtSeconds(result.thresholds.practicalFloorSec)} in ${result.input.workflow.subExposureStrategy} mode.</div>` : ""}
               </section>
-              <section class="drivers-section">
-                ${renderDriverCards(result)}
-              </section>
+              <details class="collapsible-secondary drivers-section" style="margin-top:12px">
+                <summary><span>Driver detail</span><span class="summary-meta">Show the deeper lower-side and upper-side mechanics</span></summary>
+                <div class="collapsible-secondary-body">
+                  ${renderDriverCards(result)}
+                </div>
+              </details>
               ${renderRegimeDefinitions(result)}
               <details class="collapsible-secondary">
                 <summary><span>Assumptions + sky-rate breakdown</span><span class="summary-meta">Show supporting planning inputs</span></summary>
@@ -6383,6 +6964,9 @@
         const setSpanLabel = multiFilterMode
           ? fmtRange(Math.min(...results.map((result) => result.thresholds.sweetSpotMinSec)), Math.max(...results.map((result) => result.thresholds.sweetSpotMaxSec)))
           : "";
+        const workflowDisplay = summarizeWorkflowDisplay(active.input.workflow, results);
+        const workflowSummary = workflowDisplay.headline;
+        const workflowAdvisory = workflowDisplay.advisory;
         const validationRuns = runValidationSuite();
         const resultsPanel = document.getElementById("resultsPanel");
         const camera = getCamera(appState.cameraId);
@@ -6394,26 +6978,30 @@
                 <div class="result-banner-card primary">
                   <div class="result-banner-k">${multiFilterMode ? "Suggested starts by filter" : "Suggested Start"}</div>
                   <div class="result-banner-v ${multiFilterMode ? "plan" : ""}">${multiFilterMode ? strictPlanLabel : fmtSeconds(active.headlineRecommendation.anchorSec)}</div>
+                  <div class="result-banner-sub">${multiFilterMode ? "Direct computed starts across the active filter set." : "Recommended starting point inside the current operating band."}</div>
                 </div>
                 <div class="result-banner-card">
                   <div class="result-banner-k">${multiFilterMode ? "Set operating range" : "Operating Band"}</div>
                   <div class="result-banner-v ${multiFilterMode ? "plan" : ""}">${multiFilterMode ? setSpanLabel : fmtRange(active.thresholds.sweetSpotMinSec, active.thresholds.sweetSpotMaxSec)}</div>
-                </div>
-                <div class="result-banner-card">
-                  <div class="result-banner-k">Mode</div>
-                  <div class="result-banner-v">${active.input.calibration.exposureMode === "empirical" ? "Empirical calibration" : "Planning"}</div>
-                </div>
-                <div class="result-banner-card">
-                  <div class="result-banner-k">RN Target</div>
-                  <div class="result-banner-v">${contributionTargetLabel(active.thresholds.readNoiseContributionTargetPct)}</div>
+                  <div class="result-banner-meta">
+                    <div class="result-banner-row">
+                      <div class="k">Mode</div>
+                      <div class="v">${active.input.calibration.exposureMode === "empirical" ? "Empirical calibration" : "Planning"}</div>
+                    </div>
+                    <div class="result-banner-row">
+                      <div class="k">RN target</div>
+                      <div class="v">${contributionTargetLabel(active.thresholds.readNoiseContributionTargetPct)}</div>
+                    </div>
+                  </div>
                 </div>
                 <div class="result-banner-card">
                   <div class="result-banner-k">Workflow impact</div>
-                  <div class="result-banner-v" style="font-size:1.02rem;line-height:1.15">${active.input.workflow.switchingPenalty} switching · ${active.input.workflow.favorsSharedExposure}</div>
+                  <div class="result-banner-v" style="font-size:1.02rem;line-height:1.15">${workflowSummary}</div>
+                  <div class="result-banner-sub">${workflowAdvisory}</div>
                 </div>
               </section>
   
-              <section class="hero-shell recommendation-hero">
+              <section class="hero-shell recommendation-hero" id="heroRecommendation">
                 ${multiFilterMode ? renderSetPlan(results) : `
                   ${renderExposureZoneBar(active)}
                   <div class="hero-summary-row">
@@ -6437,6 +7025,8 @@
                       <div class="hero-summary-cell"><div class="k">Sky</div><div class="v">${fmtNumber(active.derived.skyRateEPerPxPerSec, 3)} e- / px / s</div></div>
                       <div class="hero-summary-cell"><div class="k">Seeing blur</div><div class="v">${fmtNumber(active.derived.seeingPxFwhm, 2)} px FWHM</div></div>
                     </div>
+                    ${renderPlanControls([active], { showWeightPreset: false })}
+                    <div class="plan-status">${renderPlanStatus([active], "Single-filter recommendation ready to save, reload, copy, or export.")}</div>
                   </section>
                   ${renderSelectedFilterDetail(active)}
                 `}
@@ -6822,12 +7412,6 @@
           });
         }
   
-        const planNameInput = document.getElementById("planName");
-        if (planNameInput) {
-          planNameInput.addEventListener("change", () => {
-            appState.planName = planNameInput.value.trim();
-          });
-        }
         const planWeightPreset = document.getElementById("planWeightPreset");
         if (planWeightPreset) {
           planWeightPreset.addEventListener("change", () => {
@@ -6840,48 +7424,17 @@
             renderResults();
           });
         }
-        const namePlanButton = document.getElementById("namePlan");
-        if (namePlanButton) {
-          namePlanButton.addEventListener("click", () => {
-            const typed = (document.getElementById("planName")?.value || "").trim();
-            appState.planName = typed || effectivePlanName(activeResults);
-            appState.planStatus = `Plan name set to ${appState.planName}.`;
-            appState.planStatusLevel = "success";
-            renderResults();
-          });
-        }
-        const savePlanButton = document.getElementById("savePlan");
-        if (savePlanButton) {
-          savePlanButton.addEventListener("click", () => {
-            const typed = (document.getElementById("planName")?.value || "").trim();
-            appState.planName = typed || effectivePlanName(activeResults);
-            const key = "astroExposureSavedPlans";
-            const existing = JSON.parse(localStorage.getItem(key) || "[]");
-            existing.unshift({
-              name: appState.planName,
-              savedAt: new Date().toISOString(),
-              filterSetId: appState.filterSetId,
-              selectedFilters: [...appState.selectedFilters],
-              summary: buildPlanExportText(activeResults)
-            });
-            localStorage.setItem(key, JSON.stringify(existing.slice(0, 20)));
-            appState.planStatus = `Saved plan "${appState.planName}" locally in this browser.`;
-            appState.planStatusLevel = "success";
-            renderResults();
-          });
-        }
         const copyPlanButton = document.getElementById("copyPlanSummary");
         if (copyPlanButton) {
           copyPlanButton.addEventListener("click", async () => {
-            const typed = (document.getElementById("planName")?.value || "").trim();
-            if (typed) appState.planName = typed;
+            appState.planName = effectivePlanName(activeResults);
             const summary = buildPlanExportText(activeResults);
-            try {
-              await navigator.clipboard.writeText(summary);
+            const copied = await copyTextToClipboard(summary);
+            if (copied) {
               appState.planStatus = "Plan summary copied to clipboard.";
               appState.planStatusLevel = "success";
-            } catch (error) {
-              appState.planStatus = "Clipboard copy failed in this browser.";
+            } else {
+              appState.planStatus = "Clipboard copy failed. Use Export Plan Summary if this browser blocks copy.";
               appState.planStatusLevel = "error";
             }
             renderResults();
@@ -6890,12 +7443,64 @@
         const exportPlanButton = document.getElementById("exportPlanSummary");
         if (exportPlanButton) {
           exportPlanButton.addEventListener("click", () => {
-            const typed = (document.getElementById("planName")?.value || "").trim();
-            appState.planName = typed || effectivePlanName(activeResults);
+            appState.planName = effectivePlanName(activeResults);
             const safeName = (appState.planName || "exposure-plan").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
             downloadTextFile(buildPlanExportText(activeResults), `${safeName || "exposure-plan"}.txt`);
             appState.planStatus = "Plan summary exported as a text download.";
             appState.planStatusLevel = "success";
+            renderResults();
+          });
+        }
+        const exportPlanJsonButton = document.getElementById("exportPlanJson");
+        if (exportPlanJsonButton) {
+          exportPlanJsonButton.addEventListener("click", () => {
+            appState.planName = effectivePlanName(activeResults);
+            const safeName = (appState.planName || "exposure-plan").replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
+            try {
+              downloadTextFile(
+                JSON.stringify(buildPlanExportPayload(activeResults), null, 2),
+                `${safeName || "exposure-plan"}.json`,
+                "application/json"
+              );
+              appState.planStatus = "Plan summary exported as a JSON download.";
+              appState.planStatusLevel = "success";
+            } catch (error) {
+              appState.planStatus = "Plan JSON export failed.";
+              appState.planStatusLevel = "error";
+            }
+            renderResults();
+          });
+        }
+        const copyHeroButton = document.getElementById("copyHeroGraphic");
+        if (copyHeroButton) {
+          copyHeroButton.addEventListener("click", async () => {
+            try {
+              if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+                throw new Error("Image clipboard is unavailable.");
+              }
+              const blob = await renderHeroGraphicBlob(activeResults);
+              await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+              appState.planStatus = "Hero graphic copied to clipboard.";
+              appState.planStatusLevel = "success";
+            } catch (error) {
+              appState.planStatus = "Hero graphic copy is not supported in this browser. Use Export Hero Graphic (PNG).";
+              appState.planStatusLevel = "error";
+            }
+            renderResults();
+          });
+        }
+        const exportHeroButton = document.getElementById("exportHeroGraphic");
+        if (exportHeroButton) {
+          exportHeroButton.addEventListener("click", async () => {
+            try {
+              const blob = await renderHeroGraphicBlob(activeResults);
+              downloadBlob(blob, buildHeroExportFileName(activeResults));
+              appState.planStatus = "Hero graphic exported as a PNG download.";
+              appState.planStatusLevel = "success";
+            } catch (error) {
+              appState.planStatus = "Hero graphic export failed.";
+              appState.planStatusLevel = "error";
+            }
             renderResults();
           });
         }
