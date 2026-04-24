@@ -24,7 +24,7 @@
           <p>Estimate sub-exposure regimes for a single imaging system under the selected conditions.</p>
           <div class="hero-support">Shows where read noise dominates, where efficiency improves, and where saturation or workflow cost begins to outweigh longer subs.</div>
         </div>
-        <img class="hero-logo" src="./assets/logo.webp" alt="Astro Exposure Explorer logo" />
+        <img class="hero-logo" src="./assets/logo.png" alt="Astro Exposure Explorer logo" />
       </div>
     </section>
 
@@ -6312,7 +6312,7 @@
                       <button type="button" class="ghost" id="exportAppendixPdf">Export Appendix PDF</button>
                     </div>
                   </div>
-                  <img class="ap-logo" src="${toolAssetUrl("./assets/logo.webp")}" alt="Astro Exposure Explorer logo" />
+                  <img class="ap-logo" src="${toolAssetUrl("./assets/logo.png")}" alt="Astro Exposure Explorer logo" />
                 </div>
                 <div class="ap-meta"><strong>Tool version:</strong> ${currentToolVersion()} &nbsp;·&nbsp; <strong>Generated:</strong> ${today} &nbsp;·&nbsp; <strong>Active filter:</strong> ${input.filter.name} &nbsp;·&nbsp; <strong>Mode:</strong> ${input.calibration.exposureMode === "empirical" ? "Empirical Calibration Mode" : "Planning Mode"}</div>
                 <div class="ap-callout">The tool does not present one sacred exposure. It separates the problem into a <strong>lower-bound calibration question</strong>, an <strong>operating-band trade question</strong>, and an <strong>upper-bound saturation/workflow question</strong>. Those are related, but they are not identical.</div>
