@@ -77,8 +77,8 @@
           modeId: "auto",
           gain: 100,
           tempC: -10,
-          apertureMm: 130,
-          focalLengthMm: 910,
+          apertureMm: 132,
+          focalLengthMm: 924,
           fRatio: 7.0,
           throughputFrac: 0.82,
           centralObstructionFrac: 0,
@@ -95,7 +95,7 @@
           siteLatitudeDeg: 35.3,
           siteLongitudeDeg: -80.7,
           locationLookupLabel: "Manual site entry",
-          locationLookupStatus: "Location is used for computed moon geometry.",
+          locationLookupStatus: "Location is only used for computed moon geometry.",
           locationContextType: "unknown",
           bortleClass: 5,
           seeingArcsecFwhm: 2.5,
@@ -3397,9 +3397,9 @@
           sqm: "Use a measured sky-brightness reading when available. This is stronger than a generic planning estimate.",
           measuredBackground: "Mean sky/background level from a real test exposure. This anchors the lower-bound calculation more directly than a modeled sky-rate estimate.",
           biasPedestal: "Required only if the measured background is entered in ADU space and has not already been bias-corrected.",
-          trueGain: "Auto-looked-up camera conversion gain in e-/ADU from the saved empirical reference state. This is not the driver gain setting.",
+          trueGain: "Looked-up camera conversion gain in e-/ADU from the saved calibration capture settings. This is not the driver gain setting.",
           bitDepth: "Needed only when converting measured ADU values into a common working scale.",
-          darkCurrentOverride: "Optional manual override. Leave blank to use the looked-up dark current from the saved empirical reference state for this filter.",
+          darkCurrentOverride: "Optional manual override. Leave blank to use the looked-up dark current from the saved calibration capture settings for this filter.",
           moonGeometry: "Computes moon phase, moon altitude, and moon-target geometry from the selected site and time.",
           computedMoonUse: "Computed values are used to estimate lunar impact in Planning Mode.",
           fieldPreset: "Sets the representative bright-star pressure used for the saturation-side estimate.",
@@ -3499,7 +3499,7 @@
               </div>
             </div>
             <div class="actions">${recommendedGains}</div>
-            <div class="small-note" style="margin-top:8px">${camera.manufacturer} ${camera.name} is tagged <strong>${camera.dataQuality.level}</strong>. Pixel size: ${fmtNumber(camera.pixelSizeUm, 2)} µm.</div>
+            <div class="small-note" style="margin-top:8px">${camera.manufacturer} ${camera.name} ${camera.dataQuality.level === "full-modeled" ? "is <strong>fully modeled</strong>" : camera.dataQuality.level === "partial" ? "uses a <strong>partial camera model</strong>" : "uses a <strong>generic camera model</strong>"}. Pixel size: ${fmtNumber(camera.pixelSizeUm, 2)} µm.</div>
           `)}
   
           ${setupGroup("setupOpenFilters", "Filter Set", "Select a filter set and active filters", `
@@ -3517,7 +3517,7 @@
             <div class="setup-subgroup sky-source">
               <div class="setup-subgroup-head">
                 <div class="setup-subgroup-title">Sky source</div>
-                <div class="setup-subgroup-note">Use your best sky estimate. Editing one of the source fields below makes it active.</div>
+                <div class="setup-subgroup-note">Choose the sky estimate you trust most. Editing one of the source fields below makes it active.</div>
               </div>
               <div class="field-grid">
                 <div class="field"><label>Sky brightness source</label>
@@ -3734,11 +3734,11 @@
                   </div>
                 </div>
               ` : ""}
-              <div class="small-note" style="margin-top:10px">Calibration is stored per filter. You are editing the empirical entry for <strong>${calibrationFilter?.name || calibrationFilterId || "current filter"}</strong>.</div>
+              <div class="small-note" style="margin-top:10px">Each filter keeps its own calibration record. You are editing <strong>${calibrationFilter?.name || calibrationFilterId || "current filter"}</strong>.</div>
               ${hasUsableEmpiricalCalibration(calibrationFilterId) ? `<div class="field-note" style="margin-top:6px">A usable empirical record is saved for this filter and will drive the lower-bound path while Empirical Calibration Mode is active.</div>` : `<div class="warning" style="margin-top:8px">No saved empirical calibration is available yet for this filter. Until you enter and save a real test exposure and background value here, the tool will fall back to the modeled lower-bound path for this filter.</div>`}
-              <div class="field-note" style="margin-top:6px">Step through each filter here, then use <strong>Save JSON</strong> in Saved setups to keep the full calibration set together.</div>
-              <div class="micro-note" style="margin-top:6px">Empirical reference state: <strong>${activeCalibrationModeName}</strong> · <strong>gain ${activeCalibrationGain}</strong> · <strong>${activeCalibrationTempC}°C</strong>${activeCalibration.captureFilterName ? ` · <strong>${activeCalibration.captureFilterName}</strong>` : ""}</div>
-              ${calibrationDiffersFromCurrent ? `<div class="small-note" style="margin-top:6px">Current system settings differ from the saved empirical reference state. The empirical lower-bound path is using the saved reference values for this filter.</div>` : ""}
+              <div class="field-note" style="margin-top:6px">Step through each filter here, then use <strong>Save Setup (JSON)</strong> in Saved setups to keep the full calibration set together.</div>
+              <div class="micro-note" style="margin-top:6px">Saved calibration capture settings: <strong>${activeCalibrationModeName}</strong> · <strong>gain ${activeCalibrationGain}</strong> · <strong>${activeCalibrationTempC}°C</strong>${activeCalibration.captureFilterName ? ` · <strong>${activeCalibration.captureFilterName}</strong>` : ""}</div>
+              ${calibrationDiffersFromCurrent ? `<div class="small-note" style="margin-top:6px">Your current camera settings differ from the saved calibration capture settings, so this filter is still using its saved calibration values.</div>` : ""}
               <div class="field-grid" style="margin-top:10px">
                 <div class="field"><label>Test exposure time (s)</label><input id="testExposureSec" type="number" inputmode="decimal" min="0.1" max="3600" step="0.1" value="${activeCalibration.testExposureSec}"></div>
                 <div class="field"><label>Measured background value ${helpBadge(helpText.measuredBackground)}</label><input id="measuredBackgroundValue" type="number" inputmode="decimal" min="0" max="65535" step="0.1" value="${activeCalibration.measuredBackgroundValue}"></div>
@@ -3767,7 +3767,7 @@
                 </div>
                 <div class="field"><label>Dark current override (e-/px/s) ${helpBadge(helpText.darkCurrentOverride)}</label><input id="optionalDarkCurrentEPerPxPerSec" type="number" inputmode="decimal" min="0" max="1" step="0.0001" value="${Number.isFinite(activeCalibration.optionalDarkCurrentEPerPxPerSec) ? activeCalibration.optionalDarkCurrentEPerPxPerSec : ""}" placeholder="Use looked-up value"></div>
               </div>
-            ` : `<div class="small-note">Empirical calibration inputs appear here when Empirical Calibration Mode is active.</div>`}
+            ` : `<div class="small-note">Empirical calibration fields appear here when Empirical Calibration Mode is active.</div>`}
             <div class="actions">
               <button type="button" class="primary" id="loadMonoExample">Load mono narrowband example</button>
               <button type="button" class="ghost" id="loadOscExample">Load OSC broadband example</button>
