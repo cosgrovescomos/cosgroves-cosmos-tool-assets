@@ -645,6 +645,43 @@
             }
           },
           {
+            cameraId: "zwo-asi6200mc-pro",
+            name: "ASI6200MC Pro",
+            manufacturer: "ZWO",
+            sensor: "Sony IMX455",
+            colorType: "osc",
+            pixelSizeUm: 3.76,
+            resolution: { widthPx: 9576, heightPx: 6388 },
+            adcBits: 16,
+            qeModel: {
+              type: "table",
+              wavelengthNm: [400,430,460,490,520,550,580,620,656,680,700,750,800],
+              relativeQe: [0.20,0.30,0.39,0.40,0.37,0.34,0.28,0.28,0.27,0.26,0.19,0.11,0.06]
+            },
+            modes: [
+              {
+                modeId: "auto",
+                modeName: "Auto HCG transition",
+                gainRange: { min: 0, max: 300 },
+                modeSwitchBehavior: { hcgActive: false, switchGain: 100 },
+                curves: {
+                  readNoiseE: { interpolation: "linear", points: [[0,3.5],[100,0.86],[300,0.86]] },
+                  fullWellE: { interpolation: "linear", points: [[0,51000],[100,18000],[300,18000]] },
+                  systemGainEPerAdu: { interpolation: "linear", points: [[0,0.79],[100,0.28],[300,0.10]] },
+                  dynamicRangeStops: { interpolation: "linear", points: [[0,14.3],[100,12.9],[300,11.3]] },
+                  darkCurrentEPerPxPerSec: { interpolation: "linear", points: [[-20,0.0004],[-10,0.0009],[0,0.0019],[10,0.0043]] }
+                },
+                recommendedPresets: [0,100]
+              }
+            ],
+            offsetSupport: { supported: true, defaultOffset: 50 },
+            dataQuality: {
+              level: "partial",
+              curveSource: "Published gain/read-noise behavior with OSC-averaged QE reference",
+              lastVerified: "2026-04-24"
+            }
+          },
+          {
             cameraId: "zwo-asi1600mm-pro",
             name: "ASI1600MM Pro",
             manufacturer: "ZWO",
@@ -679,6 +716,154 @@
               level: "partial",
               curveSource: "Published gain/read-noise behavior with approximate secondary curves",
               lastVerified: "2026-04-06"
+            }
+          },
+          {
+            cameraId: "zwo-asi1600mc-pro",
+            name: "ASI1600MC Pro",
+            manufacturer: "ZWO",
+            sensor: "Panasonic MN34230",
+            colorType: "osc",
+            pixelSizeUm: 3.8,
+            resolution: { widthPx: 4656, heightPx: 3520 },
+            adcBits: 12,
+            qeModel: {
+              type: "table",
+              wavelengthNm: [400,450,500,550,600,650,700,750,800],
+              relativeQe: [0.08,0.23,0.27,0.28,0.27,0.23,0.16,0.07,0.02]
+            },
+            modes: [
+              {
+                modeId: "unity",
+                modeName: "Unity / HCG-leaning",
+                gainRange: { min: 0, max: 300 },
+                modeSwitchBehavior: { hcgActive: false, switchGain: 139 },
+                curves: {
+                  readNoiseE: { interpolation: "linear", points: [[0,4.0],[76,2.6],[139,2.0],[200,1.8]] },
+                  fullWellE: { interpolation: "linear", points: [[0,20000],[76,12000],[139,8000],[200,6000]] },
+                  systemGainEPerAdu: { interpolation: "linear", points: [[0,1.20],[76,0.65],[139,0.48],[200,0.36]] },
+                  dynamicRangeStops: { interpolation: "linear", points: [[0,12.0],[76,11.6],[139,11.0],[200,10.4]] },
+                  darkCurrentEPerPxPerSec: { interpolation: "linear", points: [[-20,0.0025],[-10,0.0045],[0,0.0100],[10,0.0220]] }
+                },
+                recommendedPresets: [76,139,200]
+              }
+            ],
+            offsetSupport: { supported: true, defaultOffset: 21 },
+            dataQuality: {
+              level: "generic",
+              curveSource: "MN34230-derived generic OSC model",
+              lastVerified: "2026-04-24"
+            }
+          },
+          {
+            cameraId: "zwo-asi294mm-pro",
+            name: "ASI294MM Pro",
+            manufacturer: "ZWO",
+            sensor: "Sony IMX492",
+            colorType: "mono",
+            pixelSizeUm: 4.63,
+            resolution: { widthPx: 4144, heightPx: 2822 },
+            adcBits: 14,
+            qeModel: {
+              type: "table",
+              wavelengthNm: [400,450,500,550,600,650,700,750,800],
+              relativeQe: [0.22,0.46,0.74,0.86,0.90,0.88,0.74,0.50,0.26]
+            },
+            modes: [
+              {
+                modeId: "high_gain",
+                modeName: "High gain / HCG transition",
+                gainRange: { min: 0, max: 300 },
+                modeSwitchBehavior: { hcgActive: false, switchGain: 120 },
+                curves: {
+                  readNoiseE: { interpolation: "linear", points: [[0,7.3],[50,6.5],[120,1.2],[200,1.1]] },
+                  fullWellE: { interpolation: "linear", points: [[0,66000],[120,14000],[200,13000]] },
+                  systemGainEPerAdu: { interpolation: "linear", points: [[0,1.18],[120,0.46],[200,0.32]] },
+                  dynamicRangeStops: { interpolation: "linear", points: [[0,13.0],[120,12.0],[200,11.3]] },
+                  darkCurrentEPerPxPerSec: { interpolation: "linear", points: [[-20,0.0009],[-10,0.0016],[0,0.0038],[10,0.0085]] }
+                },
+                recommendedPresets: [120]
+              }
+            ],
+            offsetSupport: { supported: true, defaultOffset: 30 },
+            dataQuality: {
+              level: "partial",
+              curveSource: "Published gain/read-noise behavior with approximate companion curves",
+              lastVerified: "2026-04-24"
+            }
+          },
+          {
+            cameraId: "zwo-asi294mc-pro",
+            name: "ASI294MC Pro",
+            manufacturer: "ZWO",
+            sensor: "Sony IMX294",
+            colorType: "osc",
+            pixelSizeUm: 4.63,
+            resolution: { widthPx: 4144, heightPx: 2822 },
+            adcBits: 14,
+            qeModel: {
+              type: "table",
+              wavelengthNm: [400,450,500,550,600,650,700,750,800],
+              relativeQe: [0.13,0.33,0.41,0.40,0.38,0.31,0.22,0.09,0.03]
+            },
+            modes: [
+              {
+                modeId: "high_gain",
+                modeName: "High gain / HCG transition",
+                gainRange: { min: 0, max: 300 },
+                modeSwitchBehavior: { hcgActive: false, switchGain: 120 },
+                curves: {
+                  readNoiseE: { interpolation: "linear", points: [[0,7.3],[50,6.5],[120,1.2],[200,1.1]] },
+                  fullWellE: { interpolation: "linear", points: [[0,66000],[120,14000],[200,13000]] },
+                  systemGainEPerAdu: { interpolation: "linear", points: [[0,1.18],[120,0.46],[200,0.32]] },
+                  dynamicRangeStops: { interpolation: "linear", points: [[0,12.8],[120,11.8],[200,11.1]] },
+                  darkCurrentEPerPxPerSec: { interpolation: "linear", points: [[-20,0.0009],[-10,0.0016],[0,0.0038],[10,0.0085]] }
+                },
+                recommendedPresets: [120]
+              }
+            ],
+            offsetSupport: { supported: true, defaultOffset: 30 },
+            dataQuality: {
+              level: "generic",
+              curveSource: "IMX294-derived generic OSC model",
+              lastVerified: "2026-04-24"
+            }
+          },
+          {
+            cameraId: "qhy600m",
+            name: "QHY600M",
+            manufacturer: "QHY",
+            sensor: "Sony IMX455",
+            colorType: "mono",
+            pixelSizeUm: 3.76,
+            resolution: { widthPx: 9576, heightPx: 6388 },
+            adcBits: 16,
+            qeModel: {
+              type: "reference",
+              wavelengthNm: [400,450,500,530,550,600,656,700,750,800],
+              relativeQe: [0.68,0.83,0.88,0.91,0.90,0.84,0.74,0.55,0.35,0.18]
+            },
+            modes: [
+              {
+                modeId: "photographic",
+                modeName: "Photographic / HCG transition",
+                gainRange: { min: 0, max: 300 },
+                modeSwitchBehavior: { hcgActive: false, switchGain: 56 },
+                curves: {
+                  readNoiseE: { interpolation: "linear", points: [[0,3.7],[56,1.0],[200,1.1]] },
+                  fullWellE: { interpolation: "linear", points: [[0,51000],[56,22000],[200,18000]] },
+                  systemGainEPerAdu: { interpolation: "linear", points: [[0,0.80],[56,0.38],[200,0.12]] },
+                  dynamicRangeStops: { interpolation: "linear", points: [[0,14.5],[56,13.3],[200,11.6]] },
+                  darkCurrentEPerPxPerSec: { interpolation: "linear", points: [[-20,0.0004],[-10,0.0009],[0,0.0019],[10,0.0043]] }
+                },
+                recommendedPresets: [56]
+              }
+            ],
+            offsetSupport: { supported: true, defaultOffset: 30 },
+            dataQuality: {
+              level: "partial",
+              curveSource: "Published read-noise behavior with estimated companion curves",
+              lastVerified: "2026-04-24"
             }
           },
           {
@@ -2158,15 +2343,15 @@
           + (focusHandling === "refocus_every_change" ? 1.0 : 0.22) * blockPenaltyScale
         );
         const favorsSharedExposure = captureSequencing === "filter_cycling"
-          ? "Shared exposure favored"
-          : "Per-filter starts favored";
+          ? "Shared exposure can be practical"
+          : "Per-filter starts can stay distinct";
         const advisory = customFilterSwitchPenaltySec != null
           ? `A custom filter-switch penalty of ${fmtSeconds(customFilterSwitchPenaltySec)} is overriding the built-in workflow assumption.`
           : captureSequencing === "filter_cycling" && focusHandling === "refocus_every_change"
-          ? "Frequent filter switching with full autofocus increases the cost of cycling filters."
+          ? "Cycling keeps filter coverage balanced, but refocusing on every filter change makes the switching overhead more noticeable."
           : captureSequencing === "filter_cycling"
-            ? "Current workflow makes a shared exposure across the set more practical."
-            : `Current workflow favors keeping per-filter starts distinct. ${fmtNumber(filterBlockLengthSubs, 0)}-sub filter blocks keep switching cost lower than cycling.`;
+            ? "Cycling keeps the session balanced across filters. Without refocus-on-change, its switching cost is usually modest."
+            : `${fmtNumber(filterBlockLengthSubs, 0)}-sub filter blocks keep switching overhead low. Cycling can still be a reasonable choice if even filter coverage matters more.`;
         return {
           captureSequencing,
           filterBlockLengthSubs,
@@ -2940,9 +3125,9 @@
   
       function describeSkySourceForUser(result) {
         if (result.thresholds.skyPedestalSource === "measured_test_frame") {
-          return `This filter is using the measured test frame instead of the planning sky estimate. Because the same test frame is anchoring the background side here, changing Bortle or SQM should not move this calibrated filter very much.`;
+          return `This filter is anchored by a measured test frame instead of the planning sky estimate. That means changing Bortle or SQM should not move the lower side very much unless you replace the calibration frame.`;
         }
-        return `This filter is using your planned sky estimate, not a measured test frame. That means Bortle, SQM, moon, transparency, and altitude can all move the upper limit.`;
+        return `This filter is using your planned sky estimate, so Bortle, SQM, moon, transparency, and altitude can move both the lower side and the sky-headroom limit on the upper side.`;
       }
   
       function explainLowerDriverForUser(result) {
@@ -2952,7 +3137,7 @@
           return `Shorter subs would spend too much of the night in overhead instead of collecting signal. That is why the tool does not call this filter comfortably workable until about ${fmtSeconds(t.lowerBoundSec)}.`;
         }
         if (driver === "Practical floor") {
-          return `For this narrowband filter, the tool is steering away from very short subs that may work on paper but are usually awkward in real imaging. In plain terms, it is treating ${fmtSeconds(t.lowerBoundSec)} as the first comfortably practical sub length.`;
+          return `For this narrowband filter, the tool is steering away from very short subs that may work on paper but are usually awkward in real imaging. In plain terms, it treats about ${fmtSeconds(t.lowerBoundSec)} as the first comfortably practical sub length.`;
         }
         return `The filter mainly needs a little more exposure time to get clear of the read-noise penalty. For this setup, that happens at about ${fmtSeconds(t.lowerBoundSec)}.`;
       }
@@ -2973,7 +3158,7 @@
         const lowerDriver = result.synthesis.lowerBoundDrivers[0]?.label || "Read noise";
         const upperDriver = result.synthesis.upperBoundDrivers[0]?.label || "Bright-star saturation";
         const lowerPhrase = lowerDriver === "Practical floor"
-          ? "the minimum practical sub length for this filter"
+          ? "the shortest comfortably practical narrowband sub"
           : lowerDriver === "Frame overhead"
             ? "capture overhead"
             : "read-noise clearance";
@@ -2982,7 +3167,7 @@
           : upperDriver === "Sky-pedestal headroom"
             ? "sky-background headroom"
             : "workflow limits";
-        return `A sensible starting point appears near ${fmtSeconds(result.thresholds.sweetSpotMinSec)} because of ${lowerPhrase}, and the plan becomes less forgiving near ${fmtSeconds(result.thresholds.sweetSpotMaxSec)} because of ${upperPhrase}.`;
+        return `A good first try is about ${fmtSeconds(result.headlineRecommendation.anchorSec)}. Shorter subs start running into ${lowerPhrase}, and longer subs become less forgiving near ${fmtSeconds(result.thresholds.sweetSpotMaxSec)} because of ${upperPhrase}.`;
       }
   
       function summarizeWorkflowDisplay(workflow, results) {
@@ -3491,7 +3676,7 @@
               <div class="field"><label>Focal length (mm)</label><input id="focalLengthMm" type="number" inputmode="numeric" min="100" max="5000" step="1" value="${appState.focalLengthMm}"></div>
               <div class="field"><label>Focal ratio</label><input id="fRatio" type="number" inputmode="decimal" min="1.5" max="15" step="0.1" value="${appState.fRatio}"></div>
               <div class="field"><label>Throughput</label><input id="throughputFrac" type="number" inputmode="decimal" min="0.2" max="1" step="0.01" value="${appState.throughputFrac}"></div>
-              <div class="field"><label>Central obstruction</label><input id="centralObstructionFrac" type="number" inputmode="decimal" min="0" max="0.7" step="0.01" value="${appState.centralObstructionFrac}"></div>
+              <div class="field"><label>Central obstruction (% of aperture diameter)</label><input id="centralObstructionFrac" type="number" inputmode="decimal" min="0" max="70" step="1" value="${fmtNumber(appState.centralObstructionFrac * 100, 0)}"></div>
               <div class="field"><label>Read-noise contribution target ${helpBadge(helpText.rnTarget)}</label>
                 <select id="readNoiseContributionTargetPct">
                   ${[10,5,2].map((value) => `<option value="${value}" ${value === appState.readNoiseContributionTargetPct ? "selected" : ""}>${value}%</option>`).join("")}
@@ -3949,10 +4134,10 @@
         if (workflow.captureSequencing === "filter_cycling" && workflow.focusHandling === "refocus_every_change") {
           return "Cycling keeps filter coverage balanced, but full refocus on each filter change makes switching overhead more noticeable.";
         }
-        if (workflow.favorsSharedExposure === "Shared exposure favored" && anchorSpread <= 120) {
+        if (workflow.favorsSharedExposure === "Shared exposure can be practical" && anchorSpread <= 120) {
           return "The filter spread is small, and this workflow keeps a shared exposure reasonably practical if you want to simplify.";
         }
-        if (workflow.favorsSharedExposure === "Per-filter starts favored" && anchorSpread > 60) {
+        if (workflow.favorsSharedExposure === "Per-filter starts can stay distinct" && anchorSpread > 60) {
           return "The current block-style workflow slightly favors keeping the starts distinct, but this is a convenience preference rather than a hard constraint.";
         }
         if (anchorSpread <= 60) {
@@ -4286,8 +4471,6 @@
       function renderSelectedFilterDetail(result) {
         const titleToneClass = filterToneClass(result.input.filter);
         const allResults = computeAllResults();
-        const lowerDriver = result.synthesis.lowerBoundDrivers[0]?.label || "Read noise";
-        const upperDriver = result.synthesis.upperBoundDrivers[0]?.label || "Bright-star saturation";
         return `
           <section class="card section section-quiet">
             <div class="detail-shell">
@@ -4299,7 +4482,6 @@
                 </div>
                 ${renderFilterTabs(allResults)}
               </div>
-              ${renderFilterDifferenceCard(result, allResults)}
               <section class="interpret-strip" style="margin-bottom:12px">
                 <div class="interpret-item">
                   <div class="k">Why not shorter</div>
@@ -4313,15 +4495,19 @@
                   <div class="k">How sky matters</div>
                   <div class="v">${describeSkySourceForUser(result)}</div>
                 </div>
-                <div class="interpret-item">
-                  <div class="k">Good starting point</div>
-                  <div class="v">${buildNetEffectSummary(result)}</div>
-                </div>
               </section>
               <section class="thresholds-section">
                 ${renderThresholdCards(result)}
-                ${result.thresholds.practicalFloorSec ? `<div class="compact-note">Practical floor active: ${fmtSeconds(result.thresholds.practicalFloorSec)} in ${result.input.workflow.subExposureStrategy} mode.</div>` : ""}
+                <div class="compact-note">${buildNetEffectSummary(result)}</div>
               </section>
+              ${allResults.length > 1 ? `
+                <details class="collapsible-secondary" style="margin-top:12px">
+                  <summary><span>Compare with nearby filter</span><span class="summary-meta">Show why this filter lands differently from the others</span></summary>
+                  <div class="collapsible-secondary-body">
+                    ${renderFilterDifferenceCard(result, allResults)}
+                  </div>
+                </details>
+              ` : ""}
               <details class="collapsible-secondary drivers-section" style="margin-top:12px">
                 <summary><span>Driver detail</span><span class="summary-meta">Show the deeper lower-side and upper-side mechanics</span></summary>
                 <div class="collapsible-secondary-body">
@@ -4672,11 +4858,7 @@
   
       function renderDriverCards(result) {
         const t = result.thresholds;
-        const skyRate = result.derived.skyRateEPerPxPerSec;
-        const rn = result.thresholds.effectiveReadNoiseE;
-        const effectiveFullWell = t.effectiveFullWellE;
         const starRate = result.sourceScenario.representativeStarCoreRateEPerSec;
-        const sweetCapFraction = getSweetCapFraction(result.input.filter);
         const thermal = result.thermal;
         const lowerRate = result.lowerBoundBackground.rateEPerPxPerSec;
         const lower = result.synthesis.lowerBoundDrivers.map((driver) => `
@@ -4708,13 +4890,13 @@
         return `
           <div class="cards-2">
             <div class="mini-card">
-              <h3>What is setting the lower side?</h3>
-              <div class="warning" style="margin-bottom:10px">This side answers when the sub becomes long enough to escape the current lower-floor penalty. For this filter the active background is ${result.lowerBoundBackground.source === "measured" ? "measured" : "modeled"} at ${fmtNumber(lowerRate, 4)} e-/px/s, the RN target is <strong>${contributionTargetLabel(t.readNoiseContributionTargetPct)}</strong>, and temperature is a <strong>${thermal.level}</strong> contributor because dark current is ${fmtPercentFromRatio(thermal.ratioToSky, 1)} of that background.</div>
+              <h3>Lower-side mechanics</h3>
+              <div class="warning" style="margin-bottom:10px">These are the specific terms that keep the tool from recommending shorter subs. For this filter the active background is ${result.lowerBoundBackground.source === "measured" ? "measured" : "modeled"} at ${fmtNumber(lowerRate, 4)} e-/px/s, the RN target is <strong>${contributionTargetLabel(t.readNoiseContributionTargetPct)}</strong>, and temperature is a <strong>${thermal.level}</strong> contributor because dark current is ${fmtPercentFromRatio(thermal.ratioToSky, 1)} of that background.</div>
               <div class="driver-list">${lower}</div>
             </div>
             <div class="mini-card">
-              <h3>What is setting the upper side?</h3>
-              <div class="warning" style="margin-bottom:10px">This side answers when longer subs stop being comfortably attractive. It depends on representative bright-structure pressure (${fmtNumber(starRate, 1)} e-/s), the active sky source (${fmtNumber(t.skyPedestalRateEPerPxPerSec, 4)} e-/px/s), and the chosen saturation and workflow tolerances. Treat it as a planning bound, not a target-specific clipping prediction.</div>
+              <h3>Upper-side mechanics</h3>
+              <div class="warning" style="margin-bottom:10px">These are the specific terms that make longer subs less attractive. It depends on representative bright-structure pressure (${fmtNumber(starRate, 1)} e-/s), the active sky source (${fmtNumber(t.skyPedestalRateEPerPxPerSec, 4)} e-/px/s), and the chosen saturation and workflow tolerances. Treat it as a planning bound, not a target-specific clipping prediction.</div>
               <div class="driver-list">${upper}</div>
             </div>
           </div>
@@ -5878,7 +6060,7 @@
             }
           }
           if (testCase.id === "workflow-blocks-refocus-every-change") {
-            if (result.input.workflow.favorsSharedExposure !== "Per-filter starts favored") {
+            if (result.input.workflow.favorsSharedExposure !== "Per-filter starts can stay distinct") {
               failures.push("Filter blocks with autofocus on change should still favor distinct per-filter starts.");
             }
             if (result.input.workflow.switchingPenalty !== "Moderate") {
@@ -5889,7 +6071,7 @@
             if (result.input.workflow.switchingPenalty !== "High") {
               failures.push("Filter cycling with autofocus on every change should show a high switching penalty.");
             }
-            if (result.input.workflow.favorsSharedExposure !== "Shared exposure favored") {
+            if (result.input.workflow.favorsSharedExposure !== "Shared exposure can be practical") {
               failures.push("Filter cycling should push the workflow guidance toward a shared set exposure.");
             }
           }
@@ -6459,8 +6641,8 @@
                   <div class="ap-method-group">
                     <div class="ap-method-group-title">Camera library currently included</div>
                     <ul class="ap-bullets">
-                      <li><strong>Mono CMOS:</strong> ZWO ASI2600MM Pro, ASI533MM Pro, ASI6200MM Pro, ASI1600MM Pro, QHY268M</li>
-                      <li><strong>OSC CMOS:</strong> ZWO ASI2600MC Pro, ASI533MC Pro, QHY268C</li>
+                      <li><strong>Mono CMOS:</strong> ZWO ASI2600MM Pro, ASI533MM Pro, ASI6200MM Pro, ASI1600MM Pro, ASI294MM Pro, QHY268M, QHY600M</li>
+                      <li><strong>OSC CMOS:</strong> ZWO ASI2600MC Pro, ASI533MC Pro, ASI6200MC Pro, ASI1600MC Pro, ASI294MC Pro, QHY268C</li>
                       <li><strong>Support meaning:</strong> each included camera has a gain-dependent state model for read noise, full well, system gain, dark current, and mode behavior at the selected gain and temperature</li>
                     </ul>
                   </div>
@@ -7017,16 +7199,9 @@
               <div class="secondary-stack">
                 ${multiFilterMode ? renderSelectedFilterDetail(active) : `
                   <section class="card section section-quiet">
-                    <div class="section-label">Planning Summary</div>
-                    <div class="hero-summary-row">
-                      <div class="hero-summary-cell"><div class="k">System</div><div class="v">${camera.manufacturer} ${camera.name}</div></div>
-                      <div class="hero-summary-cell"><div class="k">Filter</div><div class="v">${active.input.filter.name}</div></div>
-                      <div class="hero-summary-cell"><div class="k">Scale</div><div class="v">${fmtNumber(active.derived.imageScaleArcsecPerPx, 2)} arcsec / px</div></div>
-                      <div class="hero-summary-cell"><div class="k">Sky</div><div class="v">${fmtNumber(active.derived.skyRateEPerPxPerSec, 3)} e- / px / s</div></div>
-                      <div class="hero-summary-cell"><div class="k">Seeing blur</div><div class="v">${fmtNumber(active.derived.seeingPxFwhm, 2)} px FWHM</div></div>
-                    </div>
+                    <div class="section-label">Export Recommendation</div>
                     ${renderPlanControls([active], { showWeightPreset: false })}
-                    <div class="plan-status">${renderPlanStatus([active], "Single-filter recommendation ready to save, reload, copy, or export.")}</div>
+                    <div class="plan-status">${renderPlanStatus([active], `Single-filter recommendation for ${active.input.filter.name} ready to copy or export.`)}</div>
                   </section>
                   ${renderSelectedFilterDetail(active)}
                 `}
@@ -7104,7 +7279,7 @@
           appState.fRatio = Number((appState.focalLengthMm / Math.max(1, appState.apertureMm)).toFixed(2));
         }
         appState.throughputFrac = clamp(parseNumber("throughputFrac", appState.throughputFrac), 0.2, 1);
-        appState.centralObstructionFrac = clamp(parseNumber("centralObstructionFrac", appState.centralObstructionFrac), 0, 0.7);
+        appState.centralObstructionFrac = clamp(parseNumber("centralObstructionFrac", appState.centralObstructionFrac * 100) / 100, 0, 0.7);
         appState.filterSetId = document.getElementById("filterSetId")?.value || appState.filterSetId;
         if (changedId === "filterSetId") {
           const nextSet = resolveFilterSet(appState.filterSetId, getCamera(appState.cameraId));
