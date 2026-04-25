@@ -184,6 +184,7 @@
     #ac-tool .tab-btn.active::after{background:var(--a);box-shadow:0 0 6px rgba(124,224,195,.70)}
     #ac-tool .tab-panel{display:none;padding-top:7px}
     #ac-tool .tab-panel.active{display:block}
+    #ac-tool .app-copyright{margin-top:18px;padding:12px 4px 2px;border-top:1px solid rgba(255,255,255,.08);font-size:.68rem;line-height:1.5;color:rgba(207,221,240,.60);text-align:center;letter-spacing:.01em}
     /* FAQ accordion */
     #ac-tool .faq-hub{display:grid;gap:16px;width:min(1240px,100%);margin:0 auto}
     #ac-tool .faq-intro{padding:12px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,rgba(124,224,195,.11),rgba(110,193,255,.08) 58%,rgba(255,255,255,.025));box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 10px 24px rgba(0,0,0,.12)}
