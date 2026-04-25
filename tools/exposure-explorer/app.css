@@ -1250,6 +1250,15 @@
       gap:12px;
       margin-top:4px;
     }
+    .tool-copyright-inline{
+      margin:10px 0 0;
+      padding:10px 12px 6px;
+      border-top:1px solid rgba(255,255,255,.06);
+      color:rgba(213,226,240,.58);
+      font-size:.68rem;
+      line-height:1.35;
+      text-align:center;
+    }
     .section-quiet{
       border-color:rgba(255,255,255,.06);
       background:linear-gradient(180deg, rgba(255,255,255,.018), rgba(255,255,255,.008));

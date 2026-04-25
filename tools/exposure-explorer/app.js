@@ -7211,6 +7211,9 @@
           ${renderFaq(active)}
           ${renderAppendix(active)}
           ${appState.validationUnlocked ? renderValidationPanel(validationRuns) : ""}
+          <div class="tool-copyright-inline">
+            Astro Exposure Explorer © 2026 Patrick A. Cosgrove / Cosgrove’s Cosmos. All rights reserved.
+          </div>
         `;
         attachResultEvents();
       }
