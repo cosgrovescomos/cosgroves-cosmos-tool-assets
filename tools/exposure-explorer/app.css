@@ -410,6 +410,7 @@
     }
     .field select,.plan-actions select{
       padding-right:42px;
+      color-scheme:dark;
       background-image:
         linear-gradient(to left, rgba(255,255,255,.10), rgba(255,255,255,.10)),
         linear-gradient(45deg, transparent 50%, rgba(235,244,252,.98) 50%),
@@ -420,6 +421,17 @@
         calc(100% - 10px) calc(50% - 1px);
       background-size:1px 100%, 9px 9px, 9px 9px;
       background-repeat:no-repeat;
+    }
+    .field select option,
+    .plan-actions select option{
+      background:#16202d;
+      color:#f2f7ff;
+    }
+    .field select optgroup,
+    .plan-actions select optgroup{
+      background:#111925;
+      color:#dbe8f6;
+      font-weight:700;
     }
     .field input[type="number"]{
       -moz-appearance:textfield;
